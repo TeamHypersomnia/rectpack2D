@@ -4,22 +4,22 @@
 /* of your interest:
 
 1. rect_xywhf - structure representing your rectangle object
-members:
-int x, y, w, h;
-bool flipped;
+	members:
+	int x, y, w, h;
+	bool flipped;
 
 2. bin - structure representing your bin object
 3. bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins) - actual packing function
-Arguments:
-input/output: v - pointer to array of pointers to your rectangle (const here means that the pointers will point to the same rectangles after the call)
-input: n - pointers' count
+	Arguments:
+	input/output: v - pointer to array of pointers to your rectangle (const here means that the pointers will point to the same rectangles after the call)
+	input: n - pointers' count
 
-input: max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
-for the algorithm to finish faster, pass a reasonable value (unreasonable would be passing 1 000 000 000 for packing 4 50x50 rectangles).
-output: bins - vector to which the function will push_back() created bins, each of them containing vector to pointers of rectangles from "v" belonging to that particular bin.
-Every bin also keeps information about its width and height of course, none of the dimensions is bigger than max_side.
+	input: max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
+	for the algorithm to finish faster, pass a reasonable value (unreasonable would be passing 1 000 000 000 for packing 4 50x50 rectangles).
+	output: bins - vector to which the function will push_back() created bins, each of them containing vector to pointers of rectangles from "v" belonging to that particular bin.
+	Every bin also keeps information about its width and height of course, none of the dimensions is bigger than max_side.
 
-returns true on success, false if one of the rectangles' dimension was bigger than max_side
+	returns true on success, false if one of the rectangles' dimension was bigger than max_side
 
 You want to pass your vector of rectangles representing your textures/glyph objects with GL_MAX_TEXTURE_SIZE as max_side,
 then for each bin iterate through its rectangles, typecast each one to your own structure and then memcpy its pixel contents (rotated by 90 degrees if "flipped" rect_xywhf's member is true)
