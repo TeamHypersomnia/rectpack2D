@@ -12,7 +12,7 @@
 3. bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins) - actual packing function
 	Arguments:
 	input/output: v - pointer to array of pointers to your rectangles (const here means that the pointers will point to the same rectangles after the call)
-	input: n - pointers' count
+	input: n - rectangles count
 
 	input: max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
 	for the algorithm to finish faster, pass a reasonable value (unreasonable would be passing 1 000 000 000 for packing 4 50x50 rectangles).
