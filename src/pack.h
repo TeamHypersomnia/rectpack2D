@@ -3,22 +3,27 @@
 
 /* of your interest:
 
-* rect_xywhf - structure representing your rectangle object
-* bin - structure representing your bin object
-* bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins) - actual packing function
+1. rect_xywhf - structure representing your rectangle object
+members:
+int x, y, w, h;
+bool flipped;
 
-v - pointer to array of pointers to your rectangle (" ** " design is for the sake of sorting speed and const means that the pointers will point to the same rectangles)
-n - pointers' count
-max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
-           for the algorithm to finish faster, pass a reasonable value (unreasonable would be passing 1 000 000 000 for packing 4 50x50 rectangles).
-bins - vector to which the function will push_back() created bins, each of them containing vector to pointers of rectangles from "v" belonging to that particular bin.
-	   Every bin also keeps information about its width and height of course, none of the dimensions is bigger than max_side.
+2. bin - structure representing your bin object
+3. bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins) - actual packing function
+Arguments:
+input/output: v - pointer to array of pointers to your rectangle (const here means that the pointers will point to the same rectangles after the call)
+input: n - pointers' count
+
+input: max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
+for the algorithm to finish faster, pass a reasonable value (unreasonable would be passing 1 000 000 000 for packing 4 50x50 rectangles).
+output: bins - vector to which the function will push_back() created bins, each of them containing vector to pointers of rectangles from "v" belonging to that particular bin.
+Every bin also keeps information about its width and height of course, none of the dimensions is bigger than max_side.
 
 returns true on success, false if one of the rectangles' dimension was bigger than max_side
 
-You want to pass your vector of rectangles representing your textures/glyph objects with GL_MAX_TEXTURE_SIZE as max_side, 
+You want to pass your vector of rectangles representing your textures/glyph objects with GL_MAX_TEXTURE_SIZE as max_side,
 then for each bin iterate through its rectangles, typecast each one to your own structure and then memcpy its pixel contents (rotated by 90 degrees if "flipped" rect_xywhf's member is true)
-to the array representing your texture atlas to the place specified by the rectangle, then in the end upload it with glTexImage2D. 
+to the array representing your texture atlas to the place specified by the rectangle, then in the end upload it with glTexImage2D.
 
 Algorithm doesn't create any new rectangles.
 You just pass an array of pointers and rectangles' x/y/w/h are modified in place, with just vector of pointers for every new bin to let you know which ones belong to the particular bin.
@@ -36,7 +41,7 @@ struct rect_wh {
 	rect_wh(const rect_ltrb&);
 	rect_wh(const rect_xywh&);
 	rect_wh(int w = 0, int h = 0);
-	int w,h, area(), perimeter(), 
+	int w, h, area(), perimeter(),
 		fits(const rect_wh& bigger) const; // 0 - no, 1 - yes, 2 - flipped, 3 - perfectly, 4 perfectly flipped
 };
 
