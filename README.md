@@ -1,6 +1,8 @@
 # rectpack2D
 Tiny, fast and efficient rectangle packing library allowing multiple, dynamic-sized bins
 
+Copied from: http://gamedev.stackexchange.com/a/34193/16982
+
 [This algorithm][1] should meet every gamedeving needs. 
 It's very, very efficient, lightweight, and I've myself improved it with searching the best possible sorting function 
 (whether it's by area, perimeter, width, height, max(width, height)) 
