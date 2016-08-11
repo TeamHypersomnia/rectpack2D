@@ -21,13 +21,14 @@
 
 	returns true on success, false if one of the rectangles' dimension was bigger than max_side
 
-You want to pass your vector of rectangles representing your textures/glyph objects with GL_MAX_TEXTURE_SIZE as max_side,
-then for each bin iterate through its rectangles, typecast each one to your own structure and then memcpy its pixel contents (rotated by 90 degrees if "flipped" rect_xywhf's member is true)
-to the array representing your texture atlas to the place specified by the rectangle, then in the end upload it with glTexImage2D.
+You want to your rectangles representing your textures/glyph objects with GL_MAX_TEXTURE_SIZE as max_side,
+then for each bin iterate through its rectangles, typecast each one to your own structure (or manually add userdata) and then memcpy its pixel contents (rotated by 90 degrees if "flipped" rect_xywhf's member is true)
+to the array representing your texture atlas to the place specified by the rectangle, then finally upload it with glTexImage2D.
 
 Algorithm doesn't create any new rectangles.
-You just pass an array of pointers and rectangles' x/y/w/h are modified in place, with just vector of pointers for every new bin to let you know which ones belong to the particular bin.
-Modifying w/h means that the dimensions can be actually swapped for the sake of fitting, the flag "flipped" will be set to true if such a thing occurs.
+You just pass an array of pointers - rectangles' x/y/w/h/flipped are modified in place.
+There is a vector of pointers for every resultant bin to let you know which ones belong to the particular bin.
+The algorithm may swap the w and h fields for the sake of better fitting, the flag "flipped" will be set to true whenever this occurs.
 
 For description how to tune the algorithm and how it actually works see the .cpp file.
 
