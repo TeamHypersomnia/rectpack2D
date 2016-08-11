@@ -8,10 +8,10 @@
 	int x, y, w, h;
 	bool flipped;
 
-2. bin - structure representing your bin object
+2. bin - structure representing resultant bin object
 3. bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins) - actual packing function
 	Arguments:
-	input/output: v - pointer to array of pointers to your rectangle (const here means that the pointers will point to the same rectangles after the call)
+	input/output: v - pointer to array of pointers to your rectangles (const here means that the pointers will point to the same rectangles after the call)
 	input: n - pointers' count
 
 	input: max_side - maximum bins' side - algorithm works with square bins (in the end it may trim them to rectangular form).
