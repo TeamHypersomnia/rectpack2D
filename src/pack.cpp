@@ -101,8 +101,8 @@ struct node {
 		case 0: return 0;
 		case 1: img.flipped = false; break;
 		case 2: img.flipped = true; break;
-		case 3: id = &img; img.flipped = false; return this;
-		case 4: id = &img; img.flipped = true;  return this;
+		case 3: id = true; img.flipped = false; return this;
+		case 4: id = true; img.flipped = true;  return this;
 		}
 
 		int iw = (img.flipped ? img.h : img.w), ih = (img.flipped ? img.w : img.h);
