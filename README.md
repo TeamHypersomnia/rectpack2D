@@ -1,5 +1,5 @@
 # rectpack2D
-Tiny, fast and efficient rectangle packing library allowing multiple, dynamic-sized bins
+Tiny rectangle packing library allowing multiple, dynamic-sized bins.
 
 Copied from: http://gamedev.stackexchange.com/a/34193/16982
 
