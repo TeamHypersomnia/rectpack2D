@@ -1,6 +1,10 @@
 # rectpack2D
 Tiny rectangle packing library allowing multiple, dynamic-sized bins.
 
+The code is ugly, I know, I was learning the language at the time.
+Nevertheless, it's been years since I used it for the first time in my open-source shooter [Hypersomnia][3].
+No crashes so far and works quite fast.
+
 Copied from: http://gamedev.stackexchange.com/a/34193/16982
 
 [This algorithm][1] should meet every gamedeving needs. 
@@ -19,3 +23,4 @@ You have your texture atlases ready to be uploaded to GPU. Same goes for font pa
 
   [1]: http://www.blackpawn.com/texts/lightmaps/default.html
   [2]: http://i.stack.imgur.com/mOgcn.png
+  [3]: https://github.com/TeamHypersomnia/Hypersomnia
