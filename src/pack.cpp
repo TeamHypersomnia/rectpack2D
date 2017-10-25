@@ -1,10 +1,8 @@
-#pragma once
 #include "pack.h"
-#include <vector>
+#include <cstring>
 #include <algorithm>
 
 using namespace std;
-
 
 bool area(rect_xywhf* a, rect_xywhf* b) {
 	return a->area() > b->area();
@@ -139,7 +137,7 @@ rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& su
 
 	for(int f = 0; f < funcs; ++f) { 
 		order[f] = new rect_xywhf*[n];
-		memcpy(order[f], v, sizeof(rect_xywhf*) * n);
+		std::memcpy(order[f], v, sizeof(rect_xywhf*) * n);
 		sort(order[f], order[f]+n, cmpf[f]);
 	}
 
@@ -242,7 +240,7 @@ bool pack(rect_xywhf* const * v, int n, int max_s, vector<bin>& bins) {
 	vector<rect_xywhf*> vec[2], *p[2] = { vec, vec+1 };
 	vec[0].resize(n);
 	vec[1].clear();
-	memcpy(&vec[0][0], v, sizeof(rect_xywhf*)*n);
+	std::memcpy(&vec[0][0], v, sizeof(rect_xywhf*)*n);
 
 	bin* b = 0;
 
