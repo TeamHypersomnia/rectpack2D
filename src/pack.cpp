@@ -248,7 +248,7 @@ bool pack(rect_xywhf* const * v, int n, int max_s, vector<bin>& bins) {
 		bins.push_back(bin());
 		b = &bins[bins.size()-1];
 
-		b->size = _rect2D(&((*p[0])[0]), p[0]->size(), max_s, b->rects, *p[1]);
+		b->size = _rect2D(&((*p[0])[0]), static_cast<int>(p[0]->size()), max_s, b->rects, *p[1]);
 		p[0]->clear();
 
 		if(!p[1]->size()) break;
