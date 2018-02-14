@@ -1,0 +1,6 @@
+/cmake-build-debug/
+.DS_Store
+.idea
+*.iml
+
+/CMakeLists.txt

@@ -1,5 +1,5 @@
 #include <cstdio>
-#include "pack/pack.h"
+#include "../src/pack.h"
 
 using namespace std;
 
