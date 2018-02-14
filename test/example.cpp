@@ -4,6 +4,7 @@
 using namespace std;
 
 #define RECTS 200
+#define ALLOW_FLIP false
 
 int main () {
 	rect_xywhf rects[RECTS], *ptr_rects[RECTS];
@@ -15,7 +16,7 @@ int main () {
 
 	vector<bin> bins;
 
-	if(pack(ptr_rects, RECTS, 400, bins)) {
+	if(pack(ptr_rects, RECTS, 400, ALLOW_FLIP, bins)) {
 		printf("bins: %d\n", bins.size()); 
 
 		for(int i = 0; i < bins.size(); ++i) {

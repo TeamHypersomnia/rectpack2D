@@ -43,7 +43,7 @@ struct rect_wh {
 	rect_wh(const rect_xywh&);
 	rect_wh(int w = 0, int h = 0);
 	int w, h, area(), perimeter(),
-		fits(const rect_wh& bigger) const; // 0 - no, 1 - yes, 2 - flipped, 3 - perfectly, 4 perfectly flipped
+		fits(const rect_wh& bigger, bool allowFlip) const; // 0 - no, 1 - yes, 2 - flipped, 3 - perfectly, 4 perfectly flipped
 };
 
 // rectangle implementing left/top/right/bottom behaviour
@@ -79,4 +79,4 @@ struct bin {
 	std::vector<rect_xywhf*> rects;
 };
 
-bool pack(rect_xywhf* const * v, int n, int max_side, std::vector<bin>& bins);
+bool pack(rect_xywhf* const * v, int n, int max_side, bool allowFlip, std::vector<bin>& bins);

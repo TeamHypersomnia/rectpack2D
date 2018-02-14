@@ -85,14 +85,14 @@ struct node {
 		delcheck();
 	}
 
-	node* insert(rect_xywhf& img) {
+	node* insert(rect_xywhf& img, bool allowFlip ) {
 		if(c[0].pn && c[0].fill) {
-			if(auto newn = c[0].pn->insert(img)) return newn;
-			return    c[1].pn->insert(img);
+			if(auto newn = c[0].pn->insert(img,allowFlip)) return newn;
+			return    c[1].pn->insert(img,allowFlip);
 		}
 
 		if(id) return 0;
-		int f = img.fits(rect_xywh(rc));
+		int f = img.fits(rect_xywh(rc),allowFlip);
 
 		switch(f) {
 		case 0: return 0;
@@ -113,7 +113,7 @@ struct node {
 			c[1].set(rc.l, rc.t + ih, rc.r, rc.b);
 		}
 
-		return c[0].pn->insert(img);
+		return c[0].pn->insert(img,allowFlip);
 	}
 
 	void delcheck() {
@@ -127,7 +127,7 @@ struct node {
 	}
 };
 
-rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& succ, vector<rect_xywhf*>& unsucc) {
+rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, bool allowFlip, vector<rect_xywhf*>& succ, vector<rect_xywhf*>& unsucc) {
 	node root;
 
 	const int funcs = (sizeof(cmpf)/sizeof(bool (*)(rect_xywhf*, rect_xywhf*)));
@@ -157,7 +157,7 @@ rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& su
 
 				root.reset(min_bin);
 				for(i = 0; i < n; ++i)
-					if(root.insert(*v[i]))
+					if(root.insert(*v[i],allowFlip))
 						_area += v[i]->area();
 
 				fail = true;
@@ -167,7 +167,7 @@ rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& su
 			fit = -1;
 
 			for(i = 0; i < n; ++i)
-				if(!root.insert(*v[i])) {
+				if(!root.insert(*v[i],allowFlip)) {
 					fit = 1;
 					break;
 				}
@@ -201,7 +201,7 @@ rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& su
 	root.reset(min_bin);
 
 	for(i = 0; i < n; ++i) {
-		if(auto ret = root.insert(*v[i])) {
+		if(auto ret = root.insert(*v[i],allowFlip)) {
 			v[i]->x = ret->rc.l;
 			v[i]->y = ret->rc.t;
 
@@ -229,11 +229,11 @@ rect_wh _rect2D(rect_xywhf* const * v, int n, int max_s, vector<rect_xywhf*>& su
 }
 
 
-bool pack(rect_xywhf* const * v, int n, int max_s, vector<bin>& bins) {
+bool pack(rect_xywhf* const * v, int n, int max_s, bool allowFlip, vector<bin>& bins) {
 	rect_wh _rect(max_s, max_s);
 
 	for(int i = 0; i < n; ++i) 
-		if(!v[i]->fits(_rect)) return false;
+		if(!v[i]->fits(_rect,allowFlip)) return false;
 
 	vector<rect_xywhf*> vec[2], *p[2] = { vec, vec+1 };
 	vec[0].resize(n);
@@ -246,7 +246,7 @@ bool pack(rect_xywhf* const * v, int n, int max_s, vector<bin>& bins) {
 		bins.push_back(bin());
 		b = &bins[bins.size()-1];
 
-		b->size = _rect2D(&((*p[0])[0]), static_cast<int>(p[0]->size()), max_s, b->rects, *p[1]);
+		b->size = _rect2D(&((*p[0])[0]), static_cast<int>(p[0]->size()), max_s,allowFlip, b->rects, *p[1]);
 		p[0]->clear();
 
 		if(!p[1]->size()) break;
@@ -262,11 +262,11 @@ rect_wh::rect_wh(const rect_ltrb& rr) : w(rr.w()), h(rr.h()) {}
 rect_wh::rect_wh(const rect_xywh& rr) : w(rr.w), h(rr.h) {} 
 rect_wh::rect_wh(int w, int h) : w(w), h(h) {}
 
-int rect_wh::fits(const rect_wh& r) const {
+int rect_wh::fits(const rect_wh& r, bool allowFlip) const {
 	if(w == r.w && h == r.h) return 3;
-	if(h == r.w && w == r.h) return 4;
+	if(allowFlip && h == r.w && w == r.h) return 4;
 	if(w <= r.w && h <= r.h) return 1;
-	if(h <= r.w && w <= r.h) return 2;
+	if(allowFlip && h <= r.w && w <= r.h) return 2;
 	return 0;
 }
 
