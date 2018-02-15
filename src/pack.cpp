@@ -333,7 +333,7 @@ int rect_wh::perimeter() {
 
 
 rect_xywhf::rect_xywhf(const rect_ltrb& rr) : rect_xywh(rr), flipped(false) {}
-rect_xywhf::rect_xywhf(int x, int y, int width, int height) : rect_xywh(x, y, width, height), flipped(false) {}
+rect_xywhf::rect_xywhf(int index, int x, int y, int width, int height) : rect_xywh(x, y, width, height), flipped(false), index(index) {}
 rect_xywhf::rect_xywhf() : flipped(false) {}
 
 void rect_xywhf::flip() { 

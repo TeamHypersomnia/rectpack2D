@@ -67,10 +67,11 @@ struct rect_xywh : public rect_wh {
 
 struct rect_xywhf : public rect_xywh {
 	rect_xywhf(const rect_ltrb&);
-	rect_xywhf(int x, int y, int width, int height);
+	rect_xywhf(int index, int x, int y, int width, int height);
 	rect_xywhf();
 	void flip();
 	bool flipped;
+	int index;
 };
 
 
