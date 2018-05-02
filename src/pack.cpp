@@ -60,10 +60,9 @@ the algorithm reuses the node tree so it doesn't reallocate them between searchi
 
 struct node {
 	struct pnode {
-		node* pn;
-		bool fill;
+		node* pn = nullptr;
+		bool fill = false;
 
-		pnode() : fill(false), pn(0) {}
 		void set(int l, int t, int r, int b) {
 			if(!pn) pn = new node(rect_ltrb(l, t, r, b));
 			else {
@@ -76,8 +75,8 @@ struct node {
 
 	pnode c[2];
 	rect_ltrb rc;
-	bool id;
-	node(rect_ltrb rc = rect_ltrb()) : id(false), rc(rc) {}
+	bool id = false;
+	node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
 
 	void reset(const rect_wh& r) {
 		id = false;
@@ -299,7 +298,7 @@ void rect_ltrb::h(int hh) {
 
 rect_xywh::rect_xywh() : x(0), y(0) {}
 rect_xywh::rect_xywh(const rect_ltrb& rc) : x(rc.l), y(rc.t) { b(rc.b); r(rc.r); }
-rect_xywh::rect_xywh(int x, int y, int w, int h) : x(x), y(y), rect_wh(w, h) {}
+rect_xywh::rect_xywh(int x, int y, int w, int h) : rect_wh(w, h), x(x), y(y) {}
 
 rect_xywh::operator rect_ltrb() {
 	rect_ltrb rr(x, y, 0, 0);
