@@ -2,7 +2,7 @@
 #include <optional>
 #include <vector>
 
-#include "3rdparty/rectpack2D/src/pack_structs.h"
+#include "pack_structs.h"
 
 namespace rectpack {
 	struct node {
@@ -10,33 +10,33 @@ namespace rectpack {
 		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
 
 	private:
-		struct pnode {
-			node* pn = nullptr;
+		struct child_node {
+			node* ptr = nullptr;
 			bool has_trash = true;
 
 			bool has_child() const {
-				return pn != nullptr && !has_trash;
+				return ptr != nullptr && !has_trash;
 			}
 
 			void set(const rect_ltrb& r) {
-				if (pn == nullptr) { 
-					pn = new node(r); 
+				if (ptr == nullptr) { 
+					ptr = new node(r); 
 				}
 				else {
-					pn->rc = r;
-					pn->id = false;
+					ptr->rc = r;
+					ptr->node_filled = false;
 				}
 
 				has_trash = false;
 			}
 		};
 
-		pnode child[2];
-		bool id = false;
+		child_node child[2];
+		bool node_filled = false;
 
 		void delcheck() {
-			if(child[0].pn) { child[0].has_trash = true; child[0].pn->delcheck(); }
-			if(child[1].pn) { child[1].has_trash = true; child[1].pn->delcheck(); }
+			if(child[0].ptr) { child[0].has_trash = true; child[0].ptr->delcheck(); }
+			if(child[1].ptr) { child[1].has_trash = true; child[1].ptr->delcheck(); }
 		}
 
 		node* split(rect_xywhf& img, const bool allow_flip) {
@@ -44,73 +44,89 @@ namespace rectpack {
 			const auto ih = img.flipped ? img.w : img.h;
 
 			if (rc.w() - iw > rc.h() - ih) {
-				child[0].set({ rc.l, rc.t, rc.l+iw, rc.b });
-				child[1].set({ rc.l+iw, rc.t, rc.r, rc.b });
+				child[0].set({ rc.l, rc.t, rc.l + iw, rc.b });
+				child[1].set({ rc.l + iw, rc.t, rc.r, rc.b });
 			}
 			else {
 				child[0].set({ rc.l, rc.t, rc.r, rc.t + ih });
 				child[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
 			}
 
-			return child[0].pn->insert(img, allow_flip);
+			return child[0].ptr->insert(img, allow_flip);
 		}
 
 	public:
 		node* insert(rect_xywhf& img, const bool allow_flip) {
 			if (child[0].has_child()) {
-				if (const auto inserted_left = child[0].pn->insert(img, allow_flip)) {
+				if (const auto inserted_left = child[0].ptr->insert(img, allow_flip)) {
 					return inserted_left;
 				}
 
 				/* Insert to the right otherwise */
-				return child[1].pn->insert(img,allow_flip);
+				return child[1].ptr->insert(img, allow_flip);
 			}
 
-			if (id) {
+			if (node_filled) {
 				return nullptr;
 			}
 
-			switch (img.fits(rect_xywh(rc), allow_flip)) {
+			switch (img.get_fitting(rect_xywh(rc), allow_flip)) {
 				case rect_wh_fitting::TOO_BIG: 
-				return nullptr;
+					return nullptr;
 
 				case rect_wh_fitting::FITS_INSIDE:
-				img.flipped = false; 
+					img.flipped = false; 
 
-				return split(img, allow_flip); 
+					return split(img, allow_flip); 
 
 				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
-				img.flipped = true; 
+					img.flipped = true; 
 
-				return split(img, allow_flip);
+					return split(img, allow_flip);
 
 				case rect_wh_fitting::FITS_EXACTLY:
-				id = true; 
-				img.flipped = false; 
+					node_filled = true; 
+					img.flipped = false; 
 
-				return this;
+					return this;
 
 				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
-				id = true; 
-				img.flipped = true;  
+					node_filled = true; 
+					img.flipped = true;  
 
-				return this;
+					return this;
 			}
 		}
 
 		void reset(const rect_wh& r) {
-			id = false;
+			node_filled = false;
 			rc = rect_ltrb(0, 0, r.w, r.h);
 			delcheck();
 		}
 
-		~node() {
-			if (child[0].pn) {
-				delete child[0].pn;
+		template <class T>
+		void readback(
+			rect_xywhf& into,
+			T& tracked_dimensions
+		) const {
+			into.x = rc.l;
+			into.y = rc.t;
+
+			if (into.flipped) {
+				std::swap(into.w, into.h);
 			}
 
-			if (child[1].pn) {
-				delete child[1].pn;
+			tracked_dimensions.x = std::max(tracked_dimensions.x, rc.r);
+			tracked_dimensions.y = std::max(tracked_dimensions.y, rc.b); 
+		}
+
+		~node() {
+			if (child[0].ptr) {
+				delete child[0].ptr;
+			}
+
+			if (child[1].ptr) {
+				delete child[1].ptr;
 			}
 		}
 	};
@@ -174,7 +190,7 @@ namespace rectpack {
 					root.reset(min_bin);
 
 					for (int i = 0; i < n; ++i) {
-						if (root.insert(*v[i],allow_flip)) {
+						if (root.insert(*v[i], allow_flip)) {
 							current_area += v[i]->area();
 						}
 					}
@@ -225,8 +241,10 @@ namespace rectpack {
 			fail = false;
 		}
 
-		int clip_x = 0;
-		int clip_y = 0;
+		struct {
+			int x = 0;
+			int y = 0;
+		} clip;
 
 		{
 			auto& v = order[min_func ? *min_func : best_func];
@@ -234,18 +252,8 @@ namespace rectpack {
 			root.reset(min_bin);
 
 			for (int i = 0; i < n; ++i) {
-				if(auto ret = root.insert(*v[i],allow_flip)) {
-					v[i]->x = ret->rc.l;
-					v[i]->y = ret->rc.t;
-
-					if(v[i]->flipped) {
-						v[i]->flipped = false;
-						v[i]->flip();
-					}
-
-					clip_x = std::max(clip_x, ret->rc.r);
-					clip_y = std::max(clip_y, ret->rc.b); 
-
+				if (const auto ret = root.insert(*v[i],allow_flip)) {
+					ret->readback(*v[i], clip);
 					push_successful(v[i]);
 				}
 				else {
@@ -256,7 +264,7 @@ namespace rectpack {
 			}
 		}
 
-		return rect_wh(clip_x, clip_y);
+		return rect_wh(clip.x, clip.y);
 	}
 
 	template <class F, class G>

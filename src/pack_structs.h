@@ -20,7 +20,7 @@ namespace rectpack {
 		rect_wh(int w = 0, int h = 0);
 		int w, h, area(), perimeter();
 
-		rect_wh_fitting fits(const rect_wh& r, const bool allow_flip) const {
+		rect_wh_fitting get_fitting(const rect_wh& r, const bool allow_flip) const {
 			if (w == r.w && h == r.h) {
 				return rect_wh_fitting::FITS_EXACTLY;
 			}
@@ -50,6 +50,10 @@ namespace rectpack {
 		rect_ltrb(int left, int top, int right, int bottom);
 		int l, t, r, b, w() const, h() const, area() const, perimeter() const;
 		void w(int), h(int);
+
+		bool empty() const {
+			return l == r || t == b;
+		}
 	};
 
 	struct rect_xywh : public rect_wh {
@@ -139,9 +143,4 @@ namespace rectpack {
 	rect_xywhf::rect_xywhf(const rect_ltrb& rr) : rect_xywh(rr), flipped(false) {}
 	rect_xywhf::rect_xywhf(int x, int y, int width, int height) : rect_xywh(x, y, width, height), flipped(false) {}
 	rect_xywhf::rect_xywhf() : flipped(false) {}
-
-	void rect_xywhf::flip() { 
-		flipped = !flipped;
-		std::swap(w, h);
-	}
 }
