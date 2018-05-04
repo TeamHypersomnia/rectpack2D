@@ -1,9 +1,9 @@
 # rectpack2D
 
 Tiny rectangle packing library.
-This a refactored branch of the library that is easier to use and customize.
+This is a refactored branch of the library that is easier to use and customize.
 
-The example was out of date, though, so it's been removed.
+(The previously existing example was out of date, though, so it's been removed)
 
 The multiple-bin functionality was removed. It is now up to you what is to be done with unsuccessful insertions:
 
@@ -25,6 +25,11 @@ If you pass no comparators whatsoever, the standard collection of 5 orders - by 
 You can also manually perform insertions, avoiding the need to create a vector of pointers:
 
 ```cpp
+	std::vector<rect_xywhf> rects_for_packing_algorithm;
+
+	//... now fill rects_for_packing_algorithm with inputs
+	// and then pack it:
+
 	auto packing_root = rectpack::node::make_root({ max_size, max_size });
 
 	vec2i result_size;
@@ -34,13 +39,16 @@ You can also manually perform insertions, avoiding the need to create a vector o
 		rr.h += rect_padding_amount;
 
 		if (const auto n = packing_root.insert(rr, true)) {
+			// This will properly expand result_size, 
+			// and write the x and y of where the rectangle was placed, to rr.
+			// It will also flip the rectangle's dimensions if so was required by the insertion.
 			n->readback(rr, result_size);
 
 			rr.w -= rect_padding_amount;
 			rr.h -= rect_padding_amount;
 		}
 		else {
-			// A rectangle did not fit.
+			// A rectangle did not fit. Do what you like.
 			break;
 		}
 	}
