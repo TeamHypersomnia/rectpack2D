@@ -108,6 +108,8 @@ namespace rectpack {
 
 					return this;
 			}
+
+			return nullptr;
 		}
 
 		template <class T>
