@@ -1,26 +1,47 @@
 # rectpack2D
-Tiny rectangle packing library allowing multiple, dynamic-sized bins.
 
-The code is ugly, I know, I was learning the language at the time.
-Nevertheless, it's been years since I used it for the first time in my open-source shooter [Hypersomnia][3].
-No crashes so far and works quite fast.
+Tiny rectangle packing library.
+This a refactored branch of the library that is easier to use and customize.
 
-Copied from: http://gamedev.stackexchange.com/a/34193/16982
+The example was out of date, though, so it's been removed.
 
-[This algorithm][1] should meet every gamedeving needs. 
-It's very, very efficient, lightweight, and I've myself improved it with searching the best possible sorting function 
-(whether it's by area, perimeter, width, height, max(width, height)) 
-and the best possible bin size so **you don't have to hardcode the width/height yourself anymore**.
+The multiple-bin functionality was removed. It is now up to you what is to be done with unsuccessful insertions:
 
-It's also easy to  design it so it automatically portions out your rectangles into more bins
-if one with fixed maximum size is not sufficient, so you probably want to pass all your textures to it
-and pass a maximum texture size as the value for maximum bins' dimension, and BAM ! 
-You have your texture atlases ready to be uploaded to GPU. Same goes for font packing.
+```cpp
+	template <class F, class G, class... Comparators>
+	rect_wh pack_rectangles(
+		const std::vector<rect_xywhf*>& input, 
+		const int max_bin_side, 
+		const bool allow_flip, 
+		F push_successful,
+		G push_unsuccessful,
+		const int discard_step,
+		Comparators... comparators
+	)
+````
 
-400 random rectangles, automatically divided into 3 bins of maximum 400x400 size:
-![enter image description here][2]
+If you pass no comparators whatsoever, the standard collection of 5 orders - by area, by perimeter, by bigger side, by width, by height - will be passed by default.
 
+You can also manually perform insertions, avoiding the need to create a vector of pointers:
 
-  [1]: http://www.blackpawn.com/texts/lightmaps/default.html
-  [2]: http://i.stack.imgur.com/mOgcn.png
-  [3]: https://github.com/TeamHypersomnia/Hypersomnia
+```cpp
+	auto packing_root = rectpack::node::make_root({ max_size, max_size });
+
+	vec2i result_size;
+	
+	for (auto& rr : rects_for_packing_algorithm) {
+		rr.w += rect_padding_amount;
+		rr.h += rect_padding_amount;
+
+		if (const auto n = packing_root.insert(rr, true)) {
+			n->readback(rr, result_size);
+
+			rr.w -= rect_padding_amount;
+			rr.h -= rect_padding_amount;
+		}
+		else {
+			// A rectangle did not fit.
+			break;
+		}
+	}
+````
