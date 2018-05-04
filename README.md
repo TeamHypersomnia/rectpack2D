@@ -1,4 +1,7 @@
+[Check out this modern re-implementation of the library.](https://github.com/TeamHypersomnia/rectpack2D/tree/hypersomnia)
+
 # rectpack2D
+
 Tiny rectangle packing library allowing multiple, dynamic-sized bins.
 
 The code is ugly, I know, I was learning the language at the time.
