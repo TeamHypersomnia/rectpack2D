@@ -37,9 +37,6 @@ namespace rectpack {
 			}
 		};
 
-		child_node child[2];
-		bool node_filled = false;
-
 		node* split(rect_xywhf& img, const bool allow_flip) {
 			const auto iw = img.flipped ? img.h : img.w;
 			const auto ih = img.flipped ? img.w : img.h;
@@ -63,6 +60,11 @@ namespace rectpack {
 		};
 
 		rect_ltrb rc;
+
+	private:
+		child_node child[2];
+		bool node_filled = false;
+	public:
 
 		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
 
@@ -135,18 +137,16 @@ namespace rectpack {
 		const int discard_step,
 		Comparators... comparators
 	) {
-		node root;
-		const int n = input.size();
-
 		constexpr auto funcs = sizeof...(Comparators);
+		const auto n = input.size();
+
+		thread_local std::vector<rect_xywhf*> order[funcs];
 
 		bool (*cmpf[funcs])(rect_xywhf*, rect_xywhf*) = {
 			comparators...
 		};
 
-		thread_local std::vector<rect_xywhf*> order[funcs];
-
-		for (unsigned f = 0; f < funcs; ++f) { 
+		for (std::size_t f = 0; f < funcs; ++f) { 
 			order[f] = input;
 			std::sort(order[f].begin(), order[f].end(), cmpf[f]);
 		}
@@ -157,7 +157,6 @@ namespace rectpack {
 
 		int	best_func = 0;
 		int best_area = 0;
-
 		int current_area = 0;
 
 		bool fail = false;
@@ -166,7 +165,7 @@ namespace rectpack {
 			const auto& v = order[f];
 
 			int step = min_bin.w / 2;
-			root = node::make_root(min_bin);
+			auto root = node::make_root(min_bin);
 
 			while (true) {
 				if (root.rc.w() > min_bin.w) {
@@ -183,7 +182,7 @@ namespace rectpack {
 
 					root = node::make_root(min_bin);
 
-					for (int i = 0; i < n; ++i) {
+					for (std::size_t i = 0; i < n; ++i) {
 						if (root.insert(*v[i], allow_flip)) {
 							current_area += v[i]->area();
 						}
@@ -194,7 +193,7 @@ namespace rectpack {
 				}
 
 				const bool all_inserted = [&]() {
-					for (int i = 0; i < n; ++i) {
+					for (std::size_t i = 0; i < n; ++i) {
 						if (!root.insert(*v[i], allow_flip)) {
 							return false;
 						}
@@ -243,9 +242,9 @@ namespace rectpack {
 		{
 			auto& v = order[min_func ? *min_func : best_func];
 
-			root = node::make_root(min_bin);
+			auto root = node::make_root(min_bin);
 
-			for (int i = 0; i < n; ++i) {
+			for (std::size_t i = 0; i < n; ++i) {
 				if (const auto ret = root.insert(*v[i],allow_flip)) {
 					ret->readback(*v[i], clip);
 					push_successful(v[i]);
