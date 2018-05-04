@@ -13,8 +13,9 @@ namespace rectpack {
 		static int nodes_size;
 		static node_array_type all_nodes;
 
-		struct child_node {
+		class child_node {
 			int ptr = -1;
+		public:
 
 			bool has_child() const {
 				return ptr != -1;
@@ -33,7 +34,7 @@ namespace rectpack {
 					ptr = nodes_size++;
 				}
 
-				get() = r;
+				all_nodes[ptr] = r;
 			}
 		};
 
