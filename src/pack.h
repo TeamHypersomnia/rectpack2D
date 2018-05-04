@@ -7,15 +7,22 @@
 struct node {
 	struct pnode {
 		node* pn = nullptr;
-		bool fill = false;
+		bool has_trash = true;
 
-		void set(const int l, const int t, const int r, const int b) {
-			if(!pn) pn = new node(rect_ltrb(l, t, r, b));
-			else {
-				(*pn).rc = rect_ltrb(l, t, r, b);
-				(*pn).id = false;
+		bool has_child() const {
+			return pn != nullptr && !has_trash;
+		}
+
+		void set(const rect_ltrb& r) {
+			if (pn == nullptr) { 
+				pn = new node(r); 
 			}
-			fill = true;
+			else {
+				pn->rc = r;
+				pn->id = false;
+			}
+
+			has_trash = false;
 		}
 	};
 
@@ -30,40 +37,69 @@ struct node {
 		delcheck();
 	}
 
-	node* insert(rect_xywhf& img, const bool allow_flip) {
-		if(c[0].pn && c[0].fill) {
-			if(auto newn = c[0].pn->insert(img,allow_flip)) return newn;
-			return    c[1].pn->insert(img,allow_flip);
-		}
+private:
+	node* split(rect_xywhf& img, const bool allow_flip) {
+		const auto iw = img.flipped ? img.h : img.w;
+		const auto ih = img.flipped ? img.w : img.h;
 
-		if(id) return 0;
-		int f = img.fits(rect_xywh(rc),allow_flip);
-
-		switch(f) {
-			case 0: return 0;
-			case 1: img.flipped = false; break;
-			case 2: img.flipped = true; break;
-			case 3: id = true; img.flipped = false; return this;
-			case 4: id = true; img.flipped = true;  return this;
-		}
-
-		int iw = (img.flipped ? img.h : img.w), ih = (img.flipped ? img.w : img.h);
-
-		if(rc.w() - iw > rc.h() - ih) {
-			c[0].set(rc.l, rc.t, rc.l+iw, rc.b);
-			c[1].set(rc.l+iw, rc.t, rc.r, rc.b);
+		if (rc.w() - iw > rc.h() - ih) {
+			c[0].set({ rc.l, rc.t, rc.l+iw, rc.b });
+			c[1].set({ rc.l+iw, rc.t, rc.r, rc.b });
 		}
 		else {
-			c[0].set(rc.l, rc.t, rc.r, rc.t + ih);
-			c[1].set(rc.l, rc.t + ih, rc.r, rc.b);
+			c[0].set({ rc.l, rc.t, rc.r, rc.t + ih });
+			c[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
 		}
 
-		return c[0].pn->insert(img,allow_flip);
+		return c[0].pn->insert(img, allow_flip);
+	}
+public:
+
+	node* insert(rect_xywhf& img, const bool allow_flip) {
+		if (c[0].has_child()) {
+			if (const auto inserted_left = c[0].pn->insert(img, allow_flip)) {
+				return inserted_left;
+			}
+
+			/* Insert to the right otherwise */
+			return c[1].pn->insert(img,allow_flip);
+		}
+
+		if (id) {
+			return nullptr;
+		}
+
+		switch (img.fits(rect_xywh(rc), allow_flip)) {
+			case rect_wh_fitting::TOO_BIG: 
+				return nullptr;
+
+			case rect_wh_fitting::FITS_INSIDE:
+				img.flipped = false; 
+
+				return split(img, allow_flip); 
+
+			case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
+				img.flipped = true; 
+
+				return split(img, allow_flip);
+
+			case rect_wh_fitting::FITS_EXACTLY:
+				id = true; 
+				img.flipped = false; 
+
+				return this;
+
+			case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
+				id = true; 
+				img.flipped = true;  
+
+				return this;
+		}
 	}
 
 	void delcheck() {
-		if(c[0].pn) { c[0].fill = false; c[0].pn->delcheck(); }
-		if(c[1].pn) { c[1].fill = false; c[1].pn->delcheck(); }
+		if(c[0].pn) { c[0].has_trash = true; c[0].pn->delcheck(); }
+		if(c[1].pn) { c[1].has_trash = true; c[1].pn->delcheck(); }
 	}
 
 	~node() {
@@ -75,7 +111,7 @@ struct node {
 template <class F, class G, class... Comparators>
 rect_wh pack_rectangles(
 	const std::vector<rect_xywhf*>& input, 
-	const int max_s, 
+	const int max_bin_side, 
 	const bool allow_flip, 
 	F push_successful,
 	G push_unsuccessful,
@@ -98,7 +134,7 @@ rect_wh pack_rectangles(
 		std::sort(order[f].begin(), order[f].end(), cmpf[f]);
 	}
 
-	rect_wh min_bin = rect_wh(max_s, max_s);
+	rect_wh min_bin = rect_wh(max_bin_side, max_bin_side);
 
 	std::optional<int> min_func;
 
@@ -219,7 +255,7 @@ rect_wh pack_rectangles(
 template <class F, class G>
 rect_wh pack_rectangles(
 	const std::vector<rect_xywhf*>& input, 
-	const int max_s, 
+	const int max_bin_side, 
 	const bool allow_flip, 
 	F push_successful,
 	G push_unsuccessful,
@@ -248,7 +284,7 @@ rect_wh pack_rectangles(
 	return _rect2D(
 		input,
 
-		max_s,
+		max_bin_side,
 		allow_flip,
 		push_successful,
 		push_unsuccessful,

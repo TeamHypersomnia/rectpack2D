@@ -5,12 +5,43 @@
 struct rect_ltrb;
 struct rect_xywh;
 
+enum class rect_wh_fitting {
+	TOO_BIG,
+	FITS_INSIDE,
+	FITS_INSIDE_BUT_FLIPPED,
+	FITS_EXACTLY,
+	FITS_EXACTLY_BUT_FLIPPED
+};
+
 struct rect_wh {
 	rect_wh(const rect_ltrb&);
 	rect_wh(const rect_xywh&);
 	rect_wh(int w = 0, int h = 0);
-	int w, h, area(), perimeter(),
-	fits(const rect_wh& bigger, bool allow_flip) const; // 0 - no, 1 - yes, 2 - flipped, 3 - perfectly, 4 perfectly flipped
+	int w, h, area(), perimeter();
+
+	rect_wh_fitting fits(const rect_wh& r, const bool allow_flip) const {
+		if (w == r.w && h == r.h) {
+			return rect_wh_fitting::FITS_EXACTLY;
+		}
+
+		if (allow_flip) {
+			if (h == r.w && w == r.h) {
+				return rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED;	
+			}
+		}
+
+		if (w <= r.w && h <= r.h) {
+			return rect_wh_fitting::FITS_INSIDE;
+		}
+
+		if (allow_flip) {
+			if (h <= r.w && w <= r.h) {
+				return rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED;
+			}
+		}
+
+		return rect_wh_fitting::TOO_BIG;
+	}
 };
 
 struct rect_ltrb {
@@ -41,14 +72,6 @@ struct rect_xywhf : public rect_xywh {
 rect_wh::rect_wh(const rect_ltrb& rr) : w(rr.w()), h(rr.h()) {} 
 rect_wh::rect_wh(const rect_xywh& rr) : w(rr.w), h(rr.h) {} 
 rect_wh::rect_wh(int w, int h) : w(w), h(h) {}
-
-int rect_wh::fits(const rect_wh& r, const bool allow_flip) const {
-	if(w == r.w && h == r.h) return 3;
-	if(allow_flip && h == r.w && w == r.h) return 4;
-	if(w <= r.w && h <= r.h) return 1;
-	if(allow_flip && h <= r.w && w <= r.h) return 2;
-	return 0;
-}
 
 rect_ltrb::rect_ltrb() : l(0), t(0), r(0), b(0) {}
 rect_ltrb::rect_ltrb(int l, int t, int r, int b) : l(l), t(t), r(r), b(b) {}
