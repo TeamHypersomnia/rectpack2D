@@ -6,23 +6,12 @@
 #include "pack_structs.h"
 
 namespace rectpack {
-	struct node;
+	class node;
 	using node_array_type = std::array<node, 10000>;
 
-	struct node {
-		rect_ltrb rc;
-
-		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
-
-	private:
+	class node {
 		static int nodes_size;
 		static node_array_type all_nodes;
-
-	public:
-		static auto make_root(const rect_wh& r) {
-			nodes_size = 0;
-			return node({0, 0, r.w, r.h});
-		};
 
 		struct child_node {
 			int ptr = -1;
@@ -68,6 +57,15 @@ namespace rectpack {
 		}
 
 	public:
+		static auto make_root(const rect_wh& r) {
+			nodes_size = 0;
+			return node({0, 0, r.w, r.h});
+		};
+
+		rect_ltrb rc;
+
+		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
+
 		node* insert(rect_xywhf& img, const bool allow_flip) {
 			if (child[0].has_child()) {
 				if (const auto inserted_left = child[0].get().insert(img, allow_flip)) {
