@@ -5,6 +5,10 @@
 #include "3rdparty/rectpack2D/src/pack_structs.h"
 
 struct node {
+	rect_ltrb rc;
+	node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
+
+private:
 	struct pnode {
 		node* pn = nullptr;
 		bool has_trash = true;
@@ -27,17 +31,13 @@ struct node {
 	};
 
 	pnode c[2];
-	rect_ltrb rc;
 	bool id = false;
-	node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
 
-	void reset(const rect_wh& r) {
-		id = false;
-		rc = rect_ltrb(0, 0, r.w, r.h);
-		delcheck();
+	void delcheck() {
+		if(c[0].pn) { c[0].has_trash = true; c[0].pn->delcheck(); }
+		if(c[1].pn) { c[1].has_trash = true; c[1].pn->delcheck(); }
 	}
 
-private:
 	node* split(rect_xywhf& img, const bool allow_flip) {
 		const auto iw = img.flipped ? img.h : img.w;
 		const auto ih = img.flipped ? img.w : img.h;
@@ -53,8 +53,8 @@ private:
 
 		return c[0].pn->insert(img, allow_flip);
 	}
-public:
 
+public:
 	node* insert(rect_xywhf& img, const bool allow_flip) {
 		if (c[0].has_child()) {
 			if (const auto inserted_left = c[0].pn->insert(img, allow_flip)) {
@@ -97,9 +97,10 @@ public:
 		}
 	}
 
-	void delcheck() {
-		if(c[0].pn) { c[0].has_trash = true; c[0].pn->delcheck(); }
-		if(c[1].pn) { c[1].has_trash = true; c[1].pn->delcheck(); }
+	void reset(const rect_wh& r) {
+		id = false;
+		rc = rect_ltrb(0, 0, r.w, r.h);
+		delcheck();
 	}
 
 	~node() {
