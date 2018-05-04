@@ -1,43 +1,55 @@
 #pragma once
 #include <optional>
 #include <vector>
+#include <array>
 
 #include "pack_structs.h"
 
 namespace rectpack {
+	struct node;
+	using node_array_type = std::array<node, 10000>;
+
 	struct node {
 		rect_ltrb rc;
+
 		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
 
 	private:
+		static int nodes_size;
+		static node_array_type all_nodes;
+
+	public:
+		static auto make_root(const rect_wh& r) {
+			nodes_size = 0;
+			return node({0, 0, r.w, r.h});
+		};
+
 		struct child_node {
-			node* ptr = nullptr;
-			bool has_trash = true;
+			int ptr = -1;
 
 			bool has_child() const {
-				return ptr != nullptr && !has_trash;
+				return ptr != -1;
+			}
+
+			auto& get() {
+				return all_nodes[ptr];
+			}
+
+			const auto& get() const {
+				return all_nodes[ptr];
 			}
 
 			void set(const rect_ltrb& r) {
-				if (ptr == nullptr) { 
-					ptr = new node(r); 
-				}
-				else {
-					ptr->rc = r;
-					ptr->node_filled = false;
+				if (ptr == -1) { 
+					ptr = nodes_size++;
 				}
 
-				has_trash = false;
+				get() = r;
 			}
 		};
 
 		child_node child[2];
 		bool node_filled = false;
-
-		void delcheck() {
-			if(child[0].ptr) { child[0].has_trash = true; child[0].ptr->delcheck(); }
-			if(child[1].ptr) { child[1].has_trash = true; child[1].ptr->delcheck(); }
-		}
 
 		node* split(rect_xywhf& img, const bool allow_flip) {
 			const auto iw = img.flipped ? img.h : img.w;
@@ -52,18 +64,18 @@ namespace rectpack {
 				child[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
 			}
 
-			return child[0].ptr->insert(img, allow_flip);
+			return child[0].get().insert(img, allow_flip);
 		}
 
 	public:
 		node* insert(rect_xywhf& img, const bool allow_flip) {
 			if (child[0].has_child()) {
-				if (const auto inserted_left = child[0].ptr->insert(img, allow_flip)) {
+				if (const auto inserted_left = child[0].get().insert(img, allow_flip)) {
 					return inserted_left;
 				}
 
 				/* Insert to the right otherwise */
-				return child[1].ptr->insert(img, allow_flip);
+				return child[1].get().insert(img, allow_flip);
 			}
 
 			if (node_filled) {
@@ -98,12 +110,6 @@ namespace rectpack {
 			}
 		}
 
-		void reset(const rect_wh& r) {
-			node_filled = false;
-			rc = rect_ltrb(0, 0, r.w, r.h);
-			delcheck();
-		}
-
 		template <class T>
 		void readback(
 			rect_xywhf& into,
@@ -118,16 +124,6 @@ namespace rectpack {
 
 			tracked_dimensions.x = std::max(tracked_dimensions.x, rc.r);
 			tracked_dimensions.y = std::max(tracked_dimensions.y, rc.b); 
-		}
-
-		~node() {
-			if (child[0].ptr) {
-				delete child[0].ptr;
-			}
-
-			if (child[1].ptr) {
-				delete child[1].ptr;
-			}
 		}
 	};
 
@@ -172,7 +168,7 @@ namespace rectpack {
 			const auto& v = order[f];
 
 			int step = min_bin.w / 2;
-			root.reset(min_bin);
+			root = node::make_root(min_bin);
 
 			while (true) {
 				if (root.rc.w() > min_bin.w) {
@@ -187,7 +183,7 @@ namespace rectpack {
 
 					current_area = 0;
 
-					root.reset(min_bin);
+					root = node::make_root(min_bin);
 
 					for (int i = 0; i < n; ++i) {
 						if (root.insert(*v[i], allow_flip)) {
@@ -215,11 +211,11 @@ namespace rectpack {
 					}
 
 					/* Attempt was successful. Try with a smaller bin. */
-					root.reset({ root.rc.w() - step, root.rc.h() - step });
+					root = node::make_root({ root.rc.w() - step, root.rc.h() - step });
 				}
 				else {
 					/* Attempt ended in failure. Try with a bigger bin. */
-					root.reset({ root.rc.w() + step, root.rc.h() + step });
+					root = node::make_root({ root.rc.w() + step, root.rc.h() + step });
 				}
 
 				step /= 2;
@@ -249,7 +245,7 @@ namespace rectpack {
 		{
 			auto& v = order[min_func ? *min_func : best_func];
 
-			root.reset(min_bin);
+			root = node::make_root(min_bin);
 
 			for (int i = 0; i < n; ++i) {
 				if (const auto ret = root.insert(*v[i],allow_flip)) {
@@ -296,7 +292,7 @@ namespace rectpack {
 			return a->h > b->h;
 		};
 
-		return _rect2D(
+		return pack_rectangles(
 			input,
 
 			max_bin_side,
@@ -313,3 +309,6 @@ namespace rectpack {
 		);
 	}
 }
+
+rectpack::node_array_type rectpack::node::all_nodes;
+int rectpack::node::nodes_size = 0;
