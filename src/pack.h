@@ -48,9 +48,38 @@ namespace rectpack {
 		child_node child[2];
 		bool leaf_filled = false;
 
-		void grow_branch(rect_xywhf& img) {
-			const auto iw = img.flipped ? img.h : img.w;
-			const auto ih = img.flipped ? img.w : img.h;
+		template <class R>
+		auto get_leaf_filling(
+			const R& image_rectangle,
+			const bool allow_flip,
+			bool& out_flipping_necessary
+		) const {
+			switch (image_rectangle.get_fitting(rect_xywh(rc), allow_flip)) {
+				case rect_wh_fitting::TOO_BIG: 
+					return leaf_fill::TOO_BIG;
+
+				case rect_wh_fitting::FITS_INSIDE:
+					out_flipping_necessary = false; 
+					return leaf_fill::GROW;
+
+				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
+					out_flipping_necessary = true; 
+					return leaf_fill::GROW;
+
+				case rect_wh_fitting::FITS_EXACTLY:
+					out_flipping_necessary = false; 
+					return leaf_fill::EXACT;
+
+				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
+					out_flipping_necessary = true;  
+					return leaf_fill::EXACT;
+			}
+		}
+
+		template <class R>
+		void grow_branch_for(const R& image_rectangle, const bool flipping_necessary) {
+			const auto iw = flipping_necessary ? image_rectangle.h : image_rectangle.w;
+			const auto ih = flipping_necessary ? image_rectangle.w : image_rectangle.h;
 
 			if (rc.w() - iw > rc.h() - ih) {
 				child[0].set({ rc.l, rc.t, rc.l + iw, rc.b });
@@ -62,51 +91,41 @@ namespace rectpack {
 			}
 		}
 
-		leaf_fill get_filling(rect_xywhf& img, const bool allow_flip) const {
-			switch (img.get_fitting(rect_xywh(rc), allow_flip)) {
-				case rect_wh_fitting::TOO_BIG: 
-					return leaf_fill::TOO_BIG;
+		template <class R>
+		const node* leaf_insert(const R& image_rectangle, const bool allow_flip) {
+			bool flipping_necessary = false;
 
-				case rect_wh_fitting::FITS_INSIDE:
-					img.flipped = false; 
-					return leaf_fill::GROW;
+			auto get_filling_for = [&image_rectangle, allow_flip, &flipping_necessary](const node& n) {
+				return n.get_leaf_filling(
+					image_rectangle, 
+					allow_flip, 
+					flipping_necessary
+				);
+			};
 
-				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
-					img.flipped = true; 
-					return leaf_fill::GROW;
+			const auto filling = get_filling_for(*this);
 
-				case rect_wh_fitting::FITS_EXACTLY:
-					img.flipped = false; 
-					return leaf_fill::EXACT;
-
-				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
-					img.flipped = true;  
-					return leaf_fill::EXACT;
-			}
-		}
-
-		node* leaf_insert(rect_xywhf& img, const bool allow_flip) {
-			const auto result = get_filling(img, allow_flip);
-
-			if (result == leaf_fill::EXACT) {
+			if (filling == leaf_fill::EXACT) {
 				leaf_filled = true; 
 				return this;
 			}
-			else if (result == leaf_fill::GROW) {
-				grow_branch(img);
+			else if (filling == leaf_fill::GROW) {
+				grow_branch_for(image_rectangle, flipping_necessary);
 
 				auto& new_leaf = child[0].get();
-				const auto second_result = new_leaf.get_filling(img, allow_flip);
 
-				if (second_result == leaf_fill::GROW) {
-					new_leaf.grow_branch(img);
+				const auto second_filling = get_filling_for(new_leaf);
+
+				if (second_filling == leaf_fill::GROW) {
+					new_leaf.grow_branch_for(image_rectangle, flipping_necessary);
 
 					/* Left leaf of the new child must fit exactly by this point. */
+
 					auto& target_leaf = new_leaf.child[0].get();
 					target_leaf.leaf_filled = true;
 					return &target_leaf;
 				}
-				else if (second_result == leaf_fill::EXACT) {
+				else if (second_filling == leaf_fill::EXACT) {
 					new_leaf.leaf_filled = true;
 					return &new_leaf;
 				}
@@ -139,10 +158,11 @@ namespace rectpack {
 			return rc;
 		}
 
-		node* insert(rect_xywhf& img, const bool allow_flip) {
+		template <class R>
+		const node* insert(const R& image_rectangle, const bool allow_flip) {
 			if (is_empty_leaf()) {
 				/* Will happen only for the first time, for the root. */
-				return leaf_insert(img, allow_flip);
+				return leaf_insert(image_rectangle, allow_flip);
 			}
 
 			/* Recently allocated nodes are more likely to be empty leaves. */
@@ -151,7 +171,7 @@ namespace rectpack {
 				auto& nn = all_nodes[i];
 
 				if (nn.is_empty_leaf()) {
-					if (const auto result = nn.leaf_insert(img, allow_flip)) {
+					if (const auto result = nn.leaf_insert(image_rectangle, allow_flip)) {
 						return result;
 					}
 				}
@@ -167,6 +187,7 @@ namespace rectpack {
 		) const {
 			into.x = rc.l;
 			into.y = rc.t;
+			into.flipped = (rc.w() == into.h && rc.h() == into.w);
 
 			if (into.flipped) {
 				std::swap(into.w, into.h);
