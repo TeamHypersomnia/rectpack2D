@@ -4,232 +4,230 @@
 #include <array>
 
 #include "pack_structs.h"
+#include "empty_spaces.h"
 
 namespace rectpack {
-	class node;
-	using node_array_type = std::array<node, 10000>;
+	struct insert_result {
+		int count = 0;
+		std::array<rect_ltrb, 2> space_remainders;
 
-	class node {
-		static int nodes_count;
-		static node_array_type all_nodes;
-
-		class child_node {
-			int ptr = -1;
-		public:
-
-			bool is_allocated() const {
-				return ptr != -1;
-			}
-
-			auto& get() {
-				return all_nodes[ptr];
-			}
-
-			const auto& get() const {
-				return all_nodes[ptr];
-			}
-
-			void set(const rect_ltrb& r) {
-				if (ptr == -1) { 
-					ptr = nodes_count++;
-				}
-
-				all_nodes[ptr] = r;
-			}
-		};
-
-		friend class child_node;
-		friend class root_node;
-
-		enum class leaf_fill {
-			TOO_BIG,
-			EXACT,
-			GROW
-		};
-
-		rect_ltrb rc;
-		child_node child[2];
-		bool leaf_filled = false;
-
-		template <class R>
-		auto get_leaf_filling(
-			const R& image_rectangle,
-			const bool allow_flip,
-			bool& out_flipping_necessary
-		) const {
-			switch (image_rectangle.get_fitting(rect_xywh(rc), allow_flip)) {
-				case rect_wh_fitting::TOO_BIG: 
-					return leaf_fill::TOO_BIG;
-
-				case rect_wh_fitting::FITS_INSIDE:
-					out_flipping_necessary = false; 
-					return leaf_fill::GROW;
-
-				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
-					out_flipping_necessary = true; 
-					return leaf_fill::GROW;
-
-				case rect_wh_fitting::FITS_EXACTLY:
-					out_flipping_necessary = false; 
-					return leaf_fill::EXACT;
-
-				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
-					out_flipping_necessary = true;  
-					return leaf_fill::EXACT;
-			}
-		}
-
-		template <class R>
-		void grow_branch_for(const R& image_rectangle, const bool flipping_necessary) {
-			const auto iw = flipping_necessary ? image_rectangle.h : image_rectangle.w;
-			const auto ih = flipping_necessary ? image_rectangle.w : image_rectangle.h;
-
-			if (rc.w() - iw > rc.h() - ih) {
-				child[0].set({ rc.l, rc.t, rc.l + iw, rc.b });
-				child[1].set({ rc.l + iw, rc.t, rc.r, rc.b });
-			}
-			else {
-				child[0].set({ rc.l, rc.t, rc.r, rc.t + ih });
-				child[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
-			}
-		}
-
-		template <class R>
-		const node* leaf_insert(const R& image_rectangle, const bool allow_flip) {
-			bool flipping_necessary = false;
-
-			auto get_filling_for = [&image_rectangle, allow_flip, &flipping_necessary](const node& n) {
-				return n.get_leaf_filling(
-					image_rectangle, 
-					allow_flip, 
-					flipping_necessary
-				);
-			};
-
-			const auto filling = get_filling_for(*this);
-
-			if (filling == leaf_fill::EXACT) {
-				leaf_filled = true; 
-				return this;
-			}
-			else if (filling == leaf_fill::GROW) {
-				grow_branch_for(image_rectangle, flipping_necessary);
-
-				auto& new_leaf = child[0].get();
-
-				const auto second_filling = get_filling_for(new_leaf);
-
-				if (second_filling == leaf_fill::GROW) {
-					new_leaf.grow_branch_for(image_rectangle, flipping_necessary);
-
-					/* Left leaf of the new child must fit exactly by this point. */
-
-					auto& target_leaf = new_leaf.child[0].get();
-					target_leaf.leaf_filled = true;
-					return &target_leaf;
-				}
-				else if (second_filling == leaf_fill::EXACT) {
-					new_leaf.leaf_filled = true;
-					return &new_leaf;
-				}
-				else {
-					/* 
-						Should never happen. 
-						Since the first fitting query has determined that the image would fit,
-						the subsequently grown branch could not have been too small.
-					*/
-				}
-			}
-
-			/* Control may only reach here when the image was too big. */
-			return nullptr;
-		}
-
-		bool is_empty_leaf() const {
-			return !child[0].is_allocated() && !child[1].is_allocated() && !leaf_filled;
-		}
-
-		node(rect_ltrb rc) : rc(rc) {}
-
-	public:
-		node() = default;
-
-		template <class T>
-		void readback(
-			rect_xywhf& into,
-			T& tracked_dimensions
-		) const {
-			into.x = rc.l;
-			into.y = rc.t;
-			into.flipped = (rc.w() == into.h && rc.h() == into.w);
-
-			if (into.flipped) {
-				std::swap(into.w, into.h);
-			}
-
-			tracked_dimensions.x = std::max(tracked_dimensions.x, rc.r);
-			tracked_dimensions.y = std::max(tracked_dimensions.y, rc.b); 
+		bool better_than(const insert_result& b) const {
+			return count < b.count;
 		}
 	};
 
-	class root_node {
-		node first;
+	inline std::optional<insert_result> insert(
+		const rect_wh im, /* Image rectangle */
+		const rect_ltrb sp /* Space rectangle */
+	) {
+		const auto free_w = sp.w() - im.w;
+		const auto free_h = sp.h() - im.h;
+
+		if (free_w < 0 || free_h < 0) {
+			return std::nullopt;
+		}
+
+		if (free_w == 0 && free_h == 0) {
+			return insert_result { 0, {} };
+		}
+
+		if (free_w > 0 && free_h == 0) {
+			auto r = sp;
+			r.l += im.w;
+			return insert_result { 1, { r, {} } };
+		}
+
+		if (free_w == 0 && free_h > 0) {
+			auto r = sp;
+			r.t += im.h;
+			return insert_result { 1, { r, {} } };
+		}
+
+		/* 
+			At this point both free_w and free_h must be positive.
+			Decide which way to split.
+		*/
+
+		if (free_w > free_h) {
+			return insert_result { 2,
+				{
+					rect_ltrb { sp.l + im.w, sp.t, sp.r, sp.b },
+					rect_ltrb { sp.l, sp.t + im.h, sp.l + im.w, sp.b }
+				}
+			};
+		}
+
+		return insert_result { 2,
+			{
+				rect_ltrb { sp.l, sp.t + im.h, sp.r, sp.b },
+				rect_ltrb { sp.l + im.w, sp.t, sp.r, sp.t + im.h }
+			}
+		};
+	}
+
+	template <bool allow_flip>
+	using output_rect = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
+
+	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
+	class root_node : private empty_spaces_provider {
+		using base = empty_spaces_provider;
+		using base::add_empty_space;
+		using base::delete_empty_space;
+		using base::get_count_empty_spaces;
+		using base::get_empty_space;
+
+		rect_wh initial_size;
+		rect_wh current_aabb;
+
+		void expand_aabb_with(const output_rect<allow_flip>& result) {
+			current_aabb.w = std::max(current_aabb.w, result.r());
+			current_aabb.h = std::max(current_aabb.h, result.b()); 
+		}
 
 	public:
-		root_node(const rect_wh& r) : first(node({0, 0, r.w, r.h})) {
-			rectpack::node::nodes_count = 0;
-		};
+		using output_rect_type = output_rect<allow_flip>;
 
-		template <class R>
-		const node* insert(const R& image_rectangle, const bool allow_flip) {
-			if (first.is_empty_leaf()) {
-				/* Will happen only for the first time. */
-				return first.leaf_insert(image_rectangle, allow_flip);
-			}
+		root_node(const rect_wh& r) {
+			reset(r);
+		}
 
-			/* Recently allocated nodes are more likely to be empty leaves. */
+		void reset(const rect_wh& r) {
+			initial_size = r;
+			current_aabb = {};
 
-			for (int i = node::nodes_count - 1; i >= 0; --i) {
-				auto& candidate = node::all_nodes[i];
+			empty_spaces_provider::reset();
+			add_empty_space(rect_ltrb(0, 0, r.w, r.h));
+		}
 
-				if (candidate.is_empty_leaf()) {
-					if (const auto result = candidate.leaf_insert(image_rectangle, allow_flip)) {
+		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
+			for (int i = get_count_empty_spaces() - 1; i >= 0; --i) {
+				const auto candidate_space = get_empty_space(i);
+
+				auto accept_result = [this, i, image_rectangle, candidate_space](
+					const insert_result& inserted,
+					const bool flipping_necessary
+				) -> std::optional<output_rect_type> {
+					delete_empty_space(i);
+
+					for (int s = 0; s < inserted.count; ++s) {
+						if (!add_empty_space(inserted.space_remainders[s])) {
+							return std::nullopt;
+						}
+					}
+
+					auto result = output_rect_type(
+						candidate_space.l,
+						candidate_space.t,
+						image_rectangle.w,
+						image_rectangle.h
+					);
+
+					if constexpr(allow_flip) {
+						result.flipped = flipping_necessary;
+
+						if (flipping_necessary) {
+							result.rect_wh::flip();
+						}
+
+						expand_aabb_with(result);
 						return result;
+					}
+					else {
+						(void)flipping_necessary;
+						expand_aabb_with(result);
+						return result;
+					}
+				};
+
+				auto try_to_insert = [&](const rect_wh& img) {
+					return rectpack::insert(img, candidate_space);
+				};
+
+				if constexpr(!allow_flip) {
+					if (const auto normal = try_to_insert(image_rectangle)) {
+						return accept_result(*normal, false);
+					}
+				}
+				else {
+					const auto normal = try_to_insert(image_rectangle);
+					const auto flipped = try_to_insert(rect_wh(image_rectangle).flip());
+
+					/* 
+						If both were successful, 
+						prefer the one that generated less remainder spaces.
+					*/
+
+					if (normal && flipped) {
+						/* 
+							To prefer normal placements instead of flipped ones,
+							better_than will return true only if the flipped one generated
+						   	*strictly* less space remainders.
+						*/
+
+						if (flipped->better_than(*normal)) {
+							return accept_result(*flipped, true);
+						}
+
+						return accept_result(*normal, false);
+					}
+
+					if (normal) {
+						return accept_result(*normal, false);
+					}
+
+					if (flipped) {
+						return accept_result(*flipped, true);
 					}
 				}
 			}
 
-			return nullptr;
+			return std::nullopt;
 		}
 
-		auto current_size() const {
-			return first.rc;
+		auto get_size() const {
+			return initial_size;
+		}
+
+		auto get_rects_aabb() const {
+			return current_aabb;
 		}
 	};
 
-	template <class F, class G, class... Comparators>
-	rect_wh pack_rectangles(
-		const std::vector<rect_xywhf*>& input, 
+	/*
+		This function will do a binary search on viable bin sizes,
+		starting from max_bin_side.
+		
+		The search stops when the bin was successfully inserted into,
+		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
+	*/
+
+	template <class root_node_type, class F, class G, class... Comparators>
+	rect_wh find_best_packing(
+		const std::vector<typename root_node_type::output_rect_type*>& input, 
 		const int max_bin_side, 
-		const bool allow_flip, 
 		F push_successful,
 		G push_unsuccessful,
 		const int discard_step,
 		Comparators... comparators
 	) {
-		constexpr auto funcs = sizeof...(Comparators);
-		const auto n = input.size();
+		using rect_type = typename root_node_type::output_rect_type;
 
-		thread_local std::vector<rect_xywhf*> order[funcs];
+		constexpr auto count_funcs = sizeof...(Comparators);
+		thread_local std::array<std::vector<rect_type*>, count_funcs> order;
 
-		bool (*cmpf[funcs])(rect_xywhf*, rect_xywhf*) = {
-			comparators...
-		};
+		{
+			std::size_t f = 0;
 
-		for (std::size_t f = 0; f < funcs; ++f) { 
-			order[f] = input;
-			std::sort(order[f].begin(), order[f].end(), cmpf[f]);
+			auto make_order = [&f, &input](auto& comparator) {
+				order[f] = input;
+				std::sort(order[f].begin(), order[f].end(), comparator);
+				++f;
+			};
+
+			(make_order(comparators), ...);
 		}
+
+		const auto n = input.size();
 
 		rect_wh min_bin = rect_wh(max_bin_side, max_bin_side);
 
@@ -241,14 +239,17 @@ namespace rectpack {
 
 		bool fail = false;
 
-		for (unsigned f = 0; f < funcs; ++f) {
+		thread_local root_node_type root = rect_wh();
+		root.reset(min_bin);
+
+		for (unsigned f = 0; f < order.size(); ++f) {
 			const auto& v = order[f];
 
 			int step = min_bin.w / 2;
-			auto root = root_node(min_bin);
+			root.reset(min_bin);
 
 			while (true) {
-				if (root.current_size().w() > min_bin.w) {
+				if (root.get_size().w > min_bin.w) {
 					/* 
 						If we are now going to attempt packing into a bin
 						that is bigger than the current minimum, abort.
@@ -260,10 +261,10 @@ namespace rectpack {
 
 					current_area = 0;
 
-					root = root_node(min_bin);
+					root.reset(min_bin);
 
 					for (std::size_t i = 0; i < n; ++i) {
-						if (root.insert(*v[i], allow_flip)) {
+						if (root.insert(*v[i])) {
 							current_area += v[i]->area();
 						}
 					}
@@ -274,7 +275,7 @@ namespace rectpack {
 
 				const bool all_inserted = [&]() {
 					for (std::size_t i = 0; i < n; ++i) {
-						if (!root.insert(*v[i], allow_flip)) {
+						if (!root.insert(*v[i])) {
 							return false;
 						}
 					}
@@ -287,12 +288,20 @@ namespace rectpack {
 						break;
 					}
 
+					auto new_size = root.get_size();
+					new_size.w -= step;
+					new_size.h -= step;
+
 					/* Attempt was successful. Try with a smaller bin. */
-					root = root_node({ root.current_size().w() - step, root.current_size().h() - step });
+					root.reset(new_size);
 				}
 				else {
+					auto new_size = root.get_size();
+					new_size.w += step;
+					new_size.h += step;
+
 					/* Attempt ended in failure. Try with a bigger bin. */
-					root = root_node({ root.current_size().w() + step, root.current_size().h() + step });
+					root.reset(new_size);
 				}
 
 				step /= 2;
@@ -302,8 +311,8 @@ namespace rectpack {
 				}
 			}
 
-			if (!fail && (min_bin.area() >= root.current_size().area())) {
-				min_bin = rect_wh(root.current_size());
+			if (!fail && (min_bin.area() >= root.get_size().area())) {
+				min_bin = root.get_size();
 				min_func = f;
 			}
 			else if (fail && (current_area > best_area)) {
@@ -314,19 +323,14 @@ namespace rectpack {
 			fail = false;
 		}
 
-		struct {
-			int x = 0;
-			int y = 0;
-		} clip;
-
 		{
-			auto& v = order[min_func ? *min_func : best_func];
+			const auto& v = order[min_func ? *min_func : best_func];
 
-			auto root = root_node(min_bin);
+			root.reset(min_bin);
 
 			for (std::size_t i = 0; i < n; ++i) {
-				if (const auto ret = root.insert(*v[i],allow_flip)) {
-					ret->readback(*v[i], clip);
+				if (const auto ret = root.insert(*v[i])) {
+					*v[i] = *ret;
 
 					if (!push_successful(v[i])) {
 						break;
@@ -336,53 +340,39 @@ namespace rectpack {
 					if (!push_unsuccessful(v[i])) {
 						break;
 					}
-
-					v[i]->flipped = false;
 				}
 			}
-		}
 
-		return rect_wh(clip.x, clip.y);
+			return root.get_rects_aabb();
+		}
 	}
 
-	template <class F, class G>
-	rect_wh pack_rectangles(
-		const std::vector<rect_xywhf*>& input, 
-		const int max_bin_side, 
-		const bool allow_flip, 
-		F push_successful,
-		G push_unsuccessful,
-		const int discard_step
-	) {
-		auto area = [](rect_xywhf* a, rect_xywhf* b) {
+	template <class root_node_type, class... Args>
+	rect_wh find_best_packing_default(Args&&... args) {
+		using rect_type = typename root_node_type::output_rect_type;
+
+		auto area = [](const rect_type* const a, const rect_type* const b) {
 			return a->area() > b->area();
 		};
 
-		auto perimeter = [](rect_xywhf* a, rect_xywhf* b) {
+		auto perimeter = [](const rect_type* const a, const rect_type* const b) {
 			return a->perimeter() > b->perimeter();
 		};
 
-		auto max_side = [](rect_xywhf* a, rect_xywhf* b) {
+		auto max_side = [](const rect_type* const a, const rect_type* const b) {
 			return std::max(a->w, a->h) > std::max(b->w, b->h);
 		};
 
-		auto max_width = [](rect_xywhf* a, rect_xywhf* b) {
+		auto max_width = [](const rect_type* const a, const rect_type* const b) {
 			return a->w > b->w;
 		};
 
-		auto max_height = [](rect_xywhf* a, rect_xywhf* b) {
+		auto max_height = [](const rect_type* const a, const rect_type* const b) {
 			return a->h > b->h;
 		};
 
-		return pack_rectangles(
-			input,
-
-			max_bin_side,
-			allow_flip,
-			push_successful,
-			push_unsuccessful,
-			discard_step,
-
+		return find_best_packing<root_node_type>(
+			std::forward<Args>(args)...,
 			area,
 			perimeter,
 			max_side,
@@ -391,6 +381,3 @@ namespace rectpack {
 		);
 	}
 }
-
-rectpack::node_array_type rectpack::node::all_nodes;
-int rectpack::node::nodes_count = 0;

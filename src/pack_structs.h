@@ -6,43 +6,21 @@ namespace rectpack {
 	struct rect_ltrb;
 	struct rect_xywh;
 
-	enum class rect_wh_fitting {
-		TOO_BIG,
-		FITS_INSIDE,
-		FITS_INSIDE_BUT_FLIPPED,
-		FITS_EXACTLY,
-		FITS_EXACTLY_BUT_FLIPPED
-	};
-
 	struct rect_wh {
 		rect_wh(const rect_ltrb&);
 		rect_wh(const rect_xywh&);
 		rect_wh(int w = 0, int h = 0);
-		int w, h, area(), perimeter();
 
-		rect_wh_fitting get_fitting(const rect_wh& r, const bool allow_flip) const {
-			if (w == r.w && h == r.h) {
-				return rect_wh_fitting::FITS_EXACTLY;
-			}
+		int w;
+		int h;
 
-			if (allow_flip) {
-				if (h == r.w && w == r.h) {
-					return rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED;	
-				}
-			}
-
-			if (w <= r.w && h <= r.h) {
-				return rect_wh_fitting::FITS_INSIDE;
-			}
-
-			if (allow_flip) {
-				if (h <= r.w && w <= r.h) {
-					return rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED;
-				}
-			}
-
-			return rect_wh_fitting::TOO_BIG;
+		auto& flip() {
+			std::swap(w, h);
+			return *this;
 		}
+
+		int	area() const;
+	   	int perimeter() const;
 	};
 
 	struct rect_ltrb {
@@ -131,11 +109,11 @@ namespace rectpack {
 		h = bottom-y;
 	}
 
-	int rect_wh::area() {
+	int rect_wh::area() const {
 		return w*h;
 	}
 
-	int rect_wh::perimeter() {
+	int rect_wh::perimeter() const {
 		return 2*w + 2*h; 
 	}
 
