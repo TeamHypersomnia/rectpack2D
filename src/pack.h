@@ -17,7 +17,7 @@ namespace rectpack {
 			int ptr = -1;
 		public:
 
-			bool has_child() const {
+			bool is_allocated() const {
 				return ptr != -1;
 			}
 
@@ -38,7 +38,7 @@ namespace rectpack {
 			}
 		};
 
-		node* split(rect_xywhf& img, const bool allow_flip) {
+		void grow_branch(rect_xywhf& img) {
 			const auto iw = img.flipped ? img.h : img.w;
 			const auto ih = img.flipped ? img.w : img.h;
 
@@ -50,15 +50,23 @@ namespace rectpack {
 				child[0].set({ rc.l, rc.t, rc.r, rc.t + ih });
 				child[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
 			}
-
-			return child[0].get().insert(img, allow_flip);
 		}
 
 		rect_ltrb rc;
 		child_node child[2];
-		bool node_filled = false;
+		bool leaf_filled = false;
+
+		enum class leaf_fill {
+			TOO_BIG,
+			EXACT,
+			GROW
+		};
 
 	public:
+		bool is_empty_leaf() const {
+			return !child[0].is_allocated() && !child[1].is_allocated() && !leaf_filled;
+		}
+
 		static auto make_root(const rect_wh& r) {
 			nodes_size = 0;
 			return node({0, 0, r.w, r.h});
@@ -70,8 +78,36 @@ namespace rectpack {
 			return rc;
 		}
 
+		leaf_fill fill_leaf(rect_xywhf& img, const bool allow_flip) {
+			switch (img.get_fitting(rect_xywh(rc), allow_flip)) {
+				case rect_wh_fitting::TOO_BIG: 
+					return leaf_fill::TOO_BIG;
+
+				case rect_wh_fitting::FITS_INSIDE:
+					img.flipped = false; 
+					return leaf_fill::GROW;
+
+				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
+					img.flipped = true; 
+					return leaf_fill::GROW;
+
+				case rect_wh_fitting::FITS_EXACTLY:
+					leaf_filled = true; 
+					img.flipped = false; 
+
+					return leaf_fill::EXACT;
+
+				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
+					leaf_filled = true; 
+					img.flipped = true;  
+
+					return leaf_fill::EXACT;
+			}
+		}
+
 		node* insert(rect_xywhf& img, const bool allow_flip) {
-			if (child[0].has_child()) {
+			if (child[0].is_allocated()) {
+				/* This is a branch. */
 				if (const auto inserted_left = child[0].get().insert(img, allow_flip)) {
 					return inserted_left;
 				}
@@ -80,35 +116,40 @@ namespace rectpack {
 				return child[1].get().insert(img, allow_flip);
 			}
 
-			if (node_filled) {
+			/* This is a leaf. */
+
+			if (leaf_filled) {
 				return nullptr;
 			}
 
-			switch (img.get_fitting(rect_xywh(rc), allow_flip)) {
-				case rect_wh_fitting::TOO_BIG: 
-					return nullptr;
+			const auto result = fill_leaf(img, allow_flip);
 
-				case rect_wh_fitting::FITS_INSIDE:
-					img.flipped = false; 
+			if (result == leaf_fill::EXACT) {
+				return this;
+			}
+			else if (result == leaf_fill::GROW) {
+				grow_branch(img);
 
-					return split(img, allow_flip); 
+				auto& new_leaf = child[0].get();
+				const auto second_result = new_leaf.fill_leaf(img, allow_flip);
 
-				case rect_wh_fitting::FITS_INSIDE_BUT_FLIPPED: 	
-					img.flipped = true; 
+				if (second_result == leaf_fill::GROW) {
+					new_leaf.grow_branch(img);
 
-					return split(img, allow_flip);
-
-				case rect_wh_fitting::FITS_EXACTLY:
-					node_filled = true; 
-					img.flipped = false; 
-
-					return this;
-
-				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
-					node_filled = true; 
-					img.flipped = true;  
-
-					return this;
+					/* Left leaf of the new child must fit exactly by this point. */
+					auto& target_leaf = new_leaf.child[0].get();
+					target_leaf.leaf_filled = true;
+					return &target_leaf;
+				}
+				else if (second_result == leaf_fill::EXACT) {
+					return &new_leaf;
+				}
+				else {
+					/* 
+						Should never happen. 
+						It could have not been too big by this point. 
+					*/
+				}
 			}
 
 			return nullptr;
