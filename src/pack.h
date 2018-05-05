@@ -78,7 +78,7 @@ namespace rectpack {
 			return rc;
 		}
 
-		leaf_fill fill_leaf(rect_xywhf& img, const bool allow_flip) {
+		leaf_fill get_filling(rect_xywhf& img, const bool allow_flip) const {
 			switch (img.get_fitting(rect_xywh(rc), allow_flip)) {
 				case rect_wh_fitting::TOO_BIG: 
 					return leaf_fill::TOO_BIG;
@@ -92,22 +92,56 @@ namespace rectpack {
 					return leaf_fill::GROW;
 
 				case rect_wh_fitting::FITS_EXACTLY:
-					leaf_filled = true; 
 					img.flipped = false; 
-
 					return leaf_fill::EXACT;
 
 				case rect_wh_fitting::FITS_EXACTLY_BUT_FLIPPED: 
-					leaf_filled = true; 
 					img.flipped = true;  
-
 					return leaf_fill::EXACT;
 			}
+		}
+
+		node* leaf_insert(rect_xywhf& img, const bool allow_flip) {
+			const auto result = get_filling(img, allow_flip);
+
+			if (result == leaf_fill::EXACT) {
+				leaf_filled = true; 
+				return this;
+			}
+			else if (result == leaf_fill::GROW) {
+				grow_branch(img);
+
+				auto& new_leaf = child[0].get();
+				const auto second_result = new_leaf.get_filling(img, allow_flip);
+
+				if (second_result == leaf_fill::GROW) {
+					new_leaf.grow_branch(img);
+
+					/* Left leaf of the new child must fit exactly by this point. */
+					auto& target_leaf = new_leaf.child[0].get();
+					target_leaf.leaf_filled = true;
+					return &target_leaf;
+				}
+				else if (second_result == leaf_fill::EXACT) {
+					new_leaf.leaf_filled = true;
+					return &new_leaf;
+				}
+				else {
+					/* 
+						Should never happen. 
+						It could have not been too big by this point. 
+					*/
+				}
+			}
+
+			/* Control may only reach here when the img was too big. */
+			return nullptr;
 		}
 
 		node* insert(rect_xywhf& img, const bool allow_flip) {
 			if (child[0].is_allocated()) {
 				/* This is a branch. */
+
 				if (const auto inserted_left = child[0].get().insert(img, allow_flip)) {
 					return inserted_left;
 				}
@@ -122,37 +156,7 @@ namespace rectpack {
 				return nullptr;
 			}
 
-			const auto result = fill_leaf(img, allow_flip);
-
-			if (result == leaf_fill::EXACT) {
-				return this;
-			}
-			else if (result == leaf_fill::GROW) {
-				grow_branch(img);
-
-				auto& new_leaf = child[0].get();
-				const auto second_result = new_leaf.fill_leaf(img, allow_flip);
-
-				if (second_result == leaf_fill::GROW) {
-					new_leaf.grow_branch(img);
-
-					/* Left leaf of the new child must fit exactly by this point. */
-					auto& target_leaf = new_leaf.child[0].get();
-					target_leaf.leaf_filled = true;
-					return &target_leaf;
-				}
-				else if (second_result == leaf_fill::EXACT) {
-					return &new_leaf;
-				}
-				else {
-					/* 
-						Should never happen. 
-						It could have not been too big by this point. 
-					*/
-				}
-			}
-
-			return nullptr;
+			return leaf_insert(img, allow_flip);
 		}
 
 		template <class T>
