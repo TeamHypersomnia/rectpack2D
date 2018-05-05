@@ -139,24 +139,24 @@ namespace rectpack {
 		}
 
 		node* insert(rect_xywhf& img, const bool allow_flip) {
-			if (child[0].is_allocated()) {
-				/* This is a branch. */
+			if (is_empty_leaf()) {
+				/* Will happen only for the first time, for the root. */
+				return leaf_insert(img, allow_flip);
+			}
 
-				if (const auto inserted_left = child[0].get().insert(img, allow_flip)) {
-					return inserted_left;
+			/* Recently allocated nodes are more likely to be empty leaves. */
+
+			for (int i = nodes_size - 1; i >= 0; --i) {
+				auto& nn = all_nodes[i];
+
+				if (nn.is_empty_leaf()) {
+					if (const auto result = nn.leaf_insert(img, allow_flip)) {
+						return result;
+					}
 				}
-
-				/* Insert to the right otherwise */
-				return child[1].get().insert(img, allow_flip);
 			}
 
-			/* This is a leaf. */
-
-			if (leaf_filled) {
-				return nullptr;
-			}
-
-			return leaf_insert(img, allow_flip);
+			return nullptr;
 		}
 
 		template <class T>
