@@ -38,6 +38,9 @@ namespace rectpack {
 			}
 		};
 
+		friend class child_node;
+		friend class root_node;
+
 		enum class leaf_fill {
 			TOO_BIG,
 			EXACT,
@@ -146,39 +149,10 @@ namespace rectpack {
 			return !child[0].is_allocated() && !child[1].is_allocated() && !leaf_filled;
 		}
 
+		node(rect_ltrb rc) : rc(rc) {}
+
 	public:
-		static auto make_root(const rect_wh& r) {
-			nodes_count = 0;
-			return node({0, 0, r.w, r.h});
-		};
-
-		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
-
-		auto get_rc() const {
-			return rc;
-		}
-
-		template <class R>
-		const node* insert(const R& image_rectangle, const bool allow_flip) {
-			if (is_empty_leaf()) {
-				/* Will happen only for the first time, for the root. */
-				return leaf_insert(image_rectangle, allow_flip);
-			}
-
-			/* Recently allocated nodes are more likely to be empty leaves. */
-
-			for (int i = nodes_count - 1; i >= 0; --i) {
-				auto& nn = all_nodes[i];
-
-				if (nn.is_empty_leaf()) {
-					if (const auto result = nn.leaf_insert(image_rectangle, allow_flip)) {
-						return result;
-					}
-				}
-			}
-
-			return nullptr;
-		}
+		node() = default;
 
 		template <class T>
 		void readback(
@@ -195,6 +169,41 @@ namespace rectpack {
 
 			tracked_dimensions.x = std::max(tracked_dimensions.x, rc.r);
 			tracked_dimensions.y = std::max(tracked_dimensions.y, rc.b); 
+		}
+	};
+
+	class root_node {
+		node first;
+
+	public:
+		root_node(const rect_wh& r) : first(node({0, 0, r.w, r.h})) {
+			rectpack::node::nodes_count = 0;
+		};
+
+		template <class R>
+		const node* insert(const R& image_rectangle, const bool allow_flip) {
+			if (first.is_empty_leaf()) {
+				/* Will happen only for the first time. */
+				return first.leaf_insert(image_rectangle, allow_flip);
+			}
+
+			/* Recently allocated nodes are more likely to be empty leaves. */
+
+			for (int i = node::nodes_count - 1; i >= 0; --i) {
+				auto& candidate = node::all_nodes[i];
+
+				if (candidate.is_empty_leaf()) {
+					if (const auto result = candidate.leaf_insert(image_rectangle, allow_flip)) {
+						return result;
+					}
+				}
+			}
+
+			return nullptr;
+		}
+
+		auto current_size() const {
+			return first.rc;
 		}
 	};
 
@@ -236,10 +245,10 @@ namespace rectpack {
 			const auto& v = order[f];
 
 			int step = min_bin.w / 2;
-			auto root = node::make_root(min_bin);
+			auto root = root_node(min_bin);
 
 			while (true) {
-				if (root.get_rc().w() > min_bin.w) {
+				if (root.current_size().w() > min_bin.w) {
 					/* 
 						If we are now going to attempt packing into a bin
 						that is bigger than the current minimum, abort.
@@ -251,7 +260,7 @@ namespace rectpack {
 
 					current_area = 0;
 
-					root = node::make_root(min_bin);
+					root = root_node(min_bin);
 
 					for (std::size_t i = 0; i < n; ++i) {
 						if (root.insert(*v[i], allow_flip)) {
@@ -279,11 +288,11 @@ namespace rectpack {
 					}
 
 					/* Attempt was successful. Try with a smaller bin. */
-					root = node::make_root({ root.get_rc().w() - step, root.get_rc().h() - step });
+					root = root_node({ root.current_size().w() - step, root.current_size().h() - step });
 				}
 				else {
 					/* Attempt ended in failure. Try with a bigger bin. */
-					root = node::make_root({ root.get_rc().w() + step, root.get_rc().h() + step });
+					root = root_node({ root.current_size().w() + step, root.current_size().h() + step });
 				}
 
 				step /= 2;
@@ -293,8 +302,8 @@ namespace rectpack {
 				}
 			}
 
-			if (!fail && (min_bin.area() >= root.get_rc().area())) {
-				min_bin = rect_wh(root.get_rc());
+			if (!fail && (min_bin.area() >= root.current_size().area())) {
+				min_bin = rect_wh(root.current_size());
 				min_func = f;
 			}
 			else if (fail && (current_area > best_area)) {
@@ -313,7 +322,7 @@ namespace rectpack {
 		{
 			auto& v = order[min_func ? *min_func : best_func];
 
-			auto root = node::make_root(min_bin);
+			auto root = root_node(min_bin);
 
 			for (std::size_t i = 0; i < n; ++i) {
 				if (const auto ret = root.insert(*v[i],allow_flip)) {
