@@ -54,20 +54,21 @@ namespace rectpack {
 			return child[0].get().insert(img, allow_flip);
 		}
 
+		rect_ltrb rc;
+		child_node child[2];
+		bool node_filled = false;
+
 	public:
 		static auto make_root(const rect_wh& r) {
 			nodes_size = 0;
 			return node({0, 0, r.w, r.h});
 		};
 
-		rect_ltrb rc;
-
-	private:
-		child_node child[2];
-		bool node_filled = false;
-	public:
-
 		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
+
+		auto get_rc() const {
+			return rc;
+		}
 
 		node* insert(rect_xywhf& img, const bool allow_flip) {
 			if (child[0].has_child()) {
@@ -171,7 +172,7 @@ namespace rectpack {
 			auto root = node::make_root(min_bin);
 
 			while (true) {
-				if (root.rc.w() > min_bin.w) {
+				if (root.get_rc().w() > min_bin.w) {
 					/* 
 						If we are now going to attempt packing into a bin
 						that is bigger than the current minimum, abort.
@@ -211,11 +212,11 @@ namespace rectpack {
 					}
 
 					/* Attempt was successful. Try with a smaller bin. */
-					root = node::make_root({ root.rc.w() - step, root.rc.h() - step });
+					root = node::make_root({ root.get_rc().w() - step, root.get_rc().h() - step });
 				}
 				else {
 					/* Attempt ended in failure. Try with a bigger bin. */
-					root = node::make_root({ root.rc.w() + step, root.rc.h() + step });
+					root = node::make_root({ root.get_rc().w() + step, root.get_rc().h() + step });
 				}
 
 				step /= 2;
@@ -225,8 +226,8 @@ namespace rectpack {
 				}
 			}
 
-			if (!fail && (min_bin.area() >= root.rc.area())) {
-				min_bin = rect_wh(root.rc);
+			if (!fail && (min_bin.area() >= root.get_rc().area())) {
+				min_bin = rect_wh(root.get_rc());
 				min_func = f;
 			}
 			else if (fail && (current_area > best_area)) {
