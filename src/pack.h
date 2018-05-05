@@ -10,7 +10,7 @@ namespace rectpack {
 	using node_array_type = std::array<node, 10000>;
 
 	class node {
-		static int nodes_size;
+		static int nodes_count;
 		static node_array_type all_nodes;
 
 		class child_node {
@@ -31,12 +31,22 @@ namespace rectpack {
 
 			void set(const rect_ltrb& r) {
 				if (ptr == -1) { 
-					ptr = nodes_size++;
+					ptr = nodes_count++;
 				}
 
 				all_nodes[ptr] = r;
 			}
 		};
+
+		enum class leaf_fill {
+			TOO_BIG,
+			EXACT,
+			GROW
+		};
+
+		rect_ltrb rc;
+		child_node child[2];
+		bool leaf_filled = false;
 
 		void grow_branch(rect_xywhf& img) {
 			const auto iw = img.flipped ? img.h : img.w;
@@ -50,32 +60,6 @@ namespace rectpack {
 				child[0].set({ rc.l, rc.t, rc.r, rc.t + ih });
 				child[1].set({ rc.l, rc.t + ih, rc.r, rc.b });
 			}
-		}
-
-		rect_ltrb rc;
-		child_node child[2];
-		bool leaf_filled = false;
-
-		enum class leaf_fill {
-			TOO_BIG,
-			EXACT,
-			GROW
-		};
-
-	public:
-		bool is_empty_leaf() const {
-			return !child[0].is_allocated() && !child[1].is_allocated() && !leaf_filled;
-		}
-
-		static auto make_root(const rect_wh& r) {
-			nodes_size = 0;
-			return node({0, 0, r.w, r.h});
-		};
-
-		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
-
-		auto get_rc() const {
-			return rc;
 		}
 
 		leaf_fill get_filling(rect_xywhf& img, const bool allow_flip) const {
@@ -129,13 +113,30 @@ namespace rectpack {
 				else {
 					/* 
 						Should never happen. 
-						It could have not been too big by this point. 
+						Since the first fitting query has determined that the image would fit,
+						the subsequently grown branch could not have been too small.
 					*/
 				}
 			}
 
-			/* Control may only reach here when the img was too big. */
+			/* Control may only reach here when the image was too big. */
 			return nullptr;
+		}
+
+		bool is_empty_leaf() const {
+			return !child[0].is_allocated() && !child[1].is_allocated() && !leaf_filled;
+		}
+
+	public:
+		static auto make_root(const rect_wh& r) {
+			nodes_count = 0;
+			return node({0, 0, r.w, r.h});
+		};
+
+		node(rect_ltrb rc = rect_ltrb()) : rc(rc) {}
+
+		auto get_rc() const {
+			return rc;
 		}
 
 		node* insert(rect_xywhf& img, const bool allow_flip) {
@@ -146,7 +147,7 @@ namespace rectpack {
 
 			/* Recently allocated nodes are more likely to be empty leaves. */
 
-			for (int i = nodes_size - 1; i >= 0; --i) {
+			for (int i = nodes_count - 1; i >= 0; --i) {
 				auto& nn = all_nodes[i];
 
 				if (nn.is_empty_leaf()) {
@@ -296,10 +297,15 @@ namespace rectpack {
 			for (std::size_t i = 0; i < n; ++i) {
 				if (const auto ret = root.insert(*v[i],allow_flip)) {
 					ret->readback(*v[i], clip);
-					push_successful(v[i]);
+
+					if (!push_successful(v[i])) {
+						break;
+					}
 				}
 				else {
-					push_unsuccessful(v[i]);
+					if (!push_unsuccessful(v[i])) {
+						break;
+					}
 
 					v[i]->flipped = false;
 				}
@@ -357,4 +363,4 @@ namespace rectpack {
 }
 
 rectpack::node_array_type rectpack::node::all_nodes;
-int rectpack::node::nodes_size = 0;
+int rectpack::node::nodes_count = 0;
