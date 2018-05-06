@@ -7,47 +7,47 @@ namespace rectpack {
 	using space_rect = rect_xywh;
 
 	class default_empty_spaces {
-		std::vector<space_rect> empty_spaces;
+		std::vector<space_rect> spaces;
 
-	protected:
-		void delete_empty_space(const int i) {
-			empty_spaces[i] = empty_spaces.back();
-			empty_spaces.pop_back();
+	public:
+		void remove(const int i) {
+			spaces[i] = spaces.back();
+			spaces.pop_back();
 		}
 
-		bool add_empty_space(const space_rect r) {
-			empty_spaces.emplace_back(r);
+		bool add(const space_rect r) {
+			spaces.emplace_back(r);
 			return true;
 		}
 
-		auto get_count_empty_spaces() const {
-			return empty_spaces.size();
+		auto count() const {
+			return spaces.size();
 		}
 
 		void reset() {
-			empty_spaces.clear();
+			spaces.clear();
 		}
 
-		const auto& get_empty_space(const int i) {
-			return empty_spaces[i];
+		const auto& get(const int i) {
+			return spaces[i];
 		}
 	};
 
 	template <int MAX_SPACES>
 	class static_empty_spaces {
-		std::array<space_rect, MAX_SPACES> empty_spaces;
-		int count_spaces = 0;
+		std::array<space_rect, MAX_SPACES> spaces;
+		int num = 0;
 
-	protected:
-		void delete_empty_space(const int i) {
-			empty_spaces[i] = empty_spaces[count_spaces - 1];
-			--count_spaces;
+	public:
+		void remove(const int i) {
+			spaces[i] = spaces[num - 1];
+			--num;
 		}
 
-		bool add_empty_space(const space_rect r) {
-			if (count_spaces < static_cast<int>(empty_spaces.size())) {
-				empty_spaces[count_spaces] = r;
-				++count_spaces;
+		bool add(const space_rect r) {
+			if (num < static_cast<int>(spaces.size())) {
+				spaces[num] = r;
+				++num;
 
 				return true;
 			}
@@ -55,16 +55,16 @@ namespace rectpack {
 			return false;
 		}
 		
-		auto get_count_empty_spaces() const {
-			return count_spaces;
+		auto count() const {
+			return num;
 		}
 
 		void reset() {
-			count_spaces = 0;
+			num = 0;
 		}
 
-		const auto& get_empty_space(const int i) {
-			return empty_spaces[i];
+		const auto& get(const int i) {
+			return spaces[i];
 		}
 	};
 }

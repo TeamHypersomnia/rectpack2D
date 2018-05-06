@@ -92,11 +92,7 @@ namespace rectpack {
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
 	class root_node : private empty_spaces_provider {
-		using base = empty_spaces_provider;
-		using base::add_empty_space;
-		using base::delete_empty_space;
-		using base::get_count_empty_spaces;
-		using base::get_empty_space;
+		empty_spaces_provider empty_spaces;
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
@@ -110,6 +106,91 @@ namespace rectpack {
 			current_aabb.h = std::max(current_aabb.h, result.y + result.h); 
 		}
 
+		std::optional<output_rect_type> try_insert(
+			const rect_wh image_rectangle,
+			const space_rect candidate_space
+		) {
+			auto accept_result = [this, image_rectangle, candidate_space] (
+				const insert_result& inserted,
+				const bool flipping_necessary
+			) -> std::optional<output_rect_type> {
+				for (int s = 0; s < inserted.count; ++s) {
+					if (!empty_spaces.add(inserted.space_remainders[s])) {
+						return std::nullopt;
+					}
+				}
+
+				if constexpr(allow_flip) {
+					const auto result = output_rect_type(
+						candidate_space.x,
+						candidate_space.y,
+						image_rectangle.w,
+						image_rectangle.h,
+						flipping_necessary
+					);
+
+					expand_aabb_with(result);
+					return result;
+				}
+				else {
+					(void)flipping_necessary;
+
+					const auto result = output_rect_type(
+						candidate_space.x,
+						candidate_space.y,
+						image_rectangle.w,
+						image_rectangle.h
+					);
+
+					expand_aabb_with(result);
+					return result;
+				}
+			};
+
+			auto try_to_insert = [&](const rect_wh& img) {
+				return rectpack::insert(img, candidate_space);
+			};
+
+			if constexpr(!allow_flip) {
+				if (const auto normal = try_to_insert(image_rectangle)) {
+					return accept_result(*normal, false);
+				}
+			}
+			else {
+				const auto normal = try_to_insert(image_rectangle);
+				const auto flipped = try_to_insert(rect_wh(image_rectangle).flip());
+
+				/* 
+					If both were successful, 
+					prefer the one that generated less remainder spaces.
+				*/
+
+				if (normal && flipped) {
+					/* 
+						To prefer normal placements instead of flipped ones,
+						better_than will return true only if the flipped one generated
+						*strictly* less space remainders.
+					*/
+
+					if (flipped->better_than(*normal)) {
+						return accept_result(*flipped, true);
+					}
+
+					return accept_result(*normal, false);
+				}
+
+				if (normal) {
+					return accept_result(*normal, false);
+				}
+
+				if (flipped) {
+					return accept_result(*flipped, true);
+				}
+			}
+
+			return std::nullopt;
+		}
+
 	public:
 		root_node(const rect_wh& r) {
 			reset(r);
@@ -119,92 +200,15 @@ namespace rectpack {
 			initial_size = r;
 			current_aabb = {};
 
-			empty_spaces_provider::reset();
-			add_empty_space(rect_xywh(0, 0, r.w, r.h));
+			empty_spaces.reset();
+			empty_spaces.add(rect_xywh(0, 0, r.w, r.h));
 		}
 
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
-			for (int i = get_count_empty_spaces() - 1; i >= 0; --i) {
-				const auto candidate_space = get_empty_space(i);
-
-				auto accept_result = [this, i, image_rectangle, candidate_space](
-					const insert_result& inserted,
-					const bool flipping_necessary
-				) -> std::optional<output_rect_type> {
-					delete_empty_space(i);
-
-					for (int s = 0; s < inserted.count; ++s) {
-						if (!add_empty_space(inserted.space_remainders[s])) {
-							return std::nullopt;
-						}
-					}
-
-					if constexpr(allow_flip) {
-						const auto result = output_rect_type(
-							candidate_space.x,
-							candidate_space.y,
-							image_rectangle.w,
-							image_rectangle.h,
-							flipping_necessary
-						);
-
-						expand_aabb_with(result);
-						return result;
-					}
-					else {
-						(void)flipping_necessary;
-
-						const auto result = output_rect_type(
-							candidate_space.x,
-							candidate_space.y,
-							image_rectangle.w,
-							image_rectangle.h
-						);
-
-						expand_aabb_with(result);
-						return result;
-					}
-				};
-
-				auto try_to_insert = [&](const rect_wh& img) {
-					return rectpack::insert(img, candidate_space);
-				};
-
-				if constexpr(!allow_flip) {
-					if (const auto normal = try_to_insert(image_rectangle)) {
-						return accept_result(*normal, false);
-					}
-				}
-				else {
-					const auto normal = try_to_insert(image_rectangle);
-					const auto flipped = try_to_insert(rect_wh(image_rectangle).flip());
-
-					/* 
-						If both were successful, 
-						prefer the one that generated less remainder spaces.
-					*/
-
-					if (normal && flipped) {
-						/* 
-							To prefer normal placements instead of flipped ones,
-							better_than will return true only if the flipped one generated
-						   	*strictly* less space remainders.
-						*/
-
-						if (flipped->better_than(*normal)) {
-							return accept_result(*flipped, true);
-						}
-
-						return accept_result(*normal, false);
-					}
-
-					if (normal) {
-						return accept_result(*normal, false);
-					}
-
-					if (flipped) {
-						return accept_result(*flipped, true);
-					}
+			for (int i = empty_spaces.count() - 1; i >= 0; --i) {
+				if (const auto result = try_insert(image_rectangle, empty_spaces.get(i))) {
+					empty_spaces.remove(i);
+					return result;
 				}
 			}
 
