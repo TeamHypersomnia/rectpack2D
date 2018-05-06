@@ -1,8 +1,6 @@
 #pragma once
 
 namespace rectpack2D {
-	struct rect_xywh;
-
 	struct rect_wh {
 		rect_wh() : w(0), h(0) {}
 		rect_wh(const int w, const int h) : w(w), h(h) {}

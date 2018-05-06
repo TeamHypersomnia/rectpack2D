@@ -32,8 +32,8 @@ namespace rectpack2D {
 	};
 
 	inline auto insert(
-		const rect_wh im, /* Image rectangle */
-		const space_rect sp /* Space rectangle */
+		const rect_wh& im, /* Image rectangle */
+		const space_rect& sp /* Space rectangle */
 	) {
 		const auto free_w = sp.w - im.w;
 		const auto free_h = sp.h - im.h;
