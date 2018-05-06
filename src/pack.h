@@ -11,6 +11,12 @@ namespace rectpack {
 		int count = 0;
 		std::array<space_rect, 2> space_remainders;
 
+		static auto failed() {
+			insert_result result;
+			result.count = -1;
+			return result;
+		}
+
 		template <class... Args>
 		insert_result(Args&&... args) : space_remainders({ std::forward<Args>(args)... }) {
 			count = sizeof...(Args);
@@ -19,9 +25,13 @@ namespace rectpack {
 		bool better_than(const insert_result& b) const {
 			return count < b.count;
 		}
+
+		explicit operator bool() const {
+			return count != -1;
+		}
 	};
 
-	inline std::optional<insert_result> insert(
+	inline auto insert(
 		const rect_wh im, /* Image rectangle */
 		const space_rect sp /* Space rectangle */
 	) {
@@ -29,7 +39,7 @@ namespace rectpack {
 		const auto free_h = sp.h - im.h;
 
 		if (free_w < 0 || free_h < 0) {
-			return std::nullopt;
+			return insert_result::failed();
 		}
 
 		if (free_w == 0 && free_h == 0) {
@@ -168,7 +178,7 @@ namespace rectpack {
 
 				if constexpr(!allow_flip) {
 					if (const auto normal = try_to_insert(image_rectangle)) {
-						return accept_result(*normal, false);
+						return accept_result(normal, false);
 					}
 				}
 				else {
@@ -187,19 +197,19 @@ namespace rectpack {
 						   	*strictly* less space remainders.
 						*/
 
-						if (flipped->better_than(*normal)) {
-							return accept_result(*flipped, true);
+						if (flipped.better_than(normal)) {
+							return accept_result(flipped, true);
 						}
 
-						return accept_result(*normal, false);
+						return accept_result(normal, false);
 					}
 
 					if (normal) {
-						return accept_result(*normal, false);
+						return accept_result(normal, false);
 					}
 
 					if (flipped) {
-						return accept_result(*flipped, true);
+						return accept_result(flipped, true);
 					}
 				}
 			}
@@ -374,33 +384,23 @@ namespace rectpack {
 	rect_wh find_best_packing_default(Args&&... args) {
 		using rect_type = typename root_node_type::output_rect_type;
 
-		auto area = [](const rect_type* const a, const rect_type* const b) {
-			return a->area() > b->area();
-		};
-
-		auto perimeter = [](const rect_type* const a, const rect_type* const b) {
-			return a->perimeter() > b->perimeter();
-		};
-
-		auto max_side = [](const rect_type* const a, const rect_type* const b) {
-			return std::max(a->w, a->h) > std::max(b->w, b->h);
-		};
-
-		auto max_width = [](const rect_type* const a, const rect_type* const b) {
-			return a->w > b->w;
-		};
-
-		auto max_height = [](const rect_type* const a, const rect_type* const b) {
-			return a->h > b->h;
-		};
-
 		return find_best_packing<root_node_type>(
 			std::forward<Args>(args)...,
-			area,
-			perimeter,
-			max_side,
-			max_width,
-			max_height
+			[](const rect_type* const a, const rect_type* const b) {
+				return a->area() > b->area();
+			},
+			[](const rect_type* const a, const rect_type* const b) {
+				return a->perimeter() > b->perimeter();
+			},
+			[](const rect_type* const a, const rect_type* const b) {
+				return std::max(a->w, a->h) > std::max(b->w, b->h);
+			},
+			[](const rect_type* const a, const rect_type* const b) {
+				return a->w > b->w;
+			},
+			[](const rect_type* const a, const rect_type* const b) {
+				return a->h > b->h;
+			}
 		);
 	}
 }
