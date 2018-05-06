@@ -1,8 +1,11 @@
 #pragma once
 
-namespace rectpack {
-	struct rect_xywh;
+/* 
+	This could be templatized a lot but this would be splitting hairs a lot,
+	and repetition sometimes communicates intent better.
+*/
 
+namespace rectpack {
 	struct rect_wh {
 		rect_wh() : w(0), h(0) {}
 		rect_wh(const int w, const int h) : w(w), h(h) {}
@@ -17,6 +20,10 @@ namespace rectpack {
 
 		int	area() const { return w * h; }
 	   	int perimeter() const { return 2 * w + 2 * h; }
+
+		bool max_side_greater(const rect_wh b) const {
+			return std::max(w, h) > std::max(b.w, b.h);
+		}
 	};
 
 	struct rect_xywh {
@@ -30,6 +37,10 @@ namespace rectpack {
 
 		int	area() const { return w * h; }
 		int perimeter() const { return 2 * w + 2 * h; }
+
+		auto get_wh() const {
+			return rect_wh(w, h);
+		}
 	};
 
 	struct rect_xywhf {

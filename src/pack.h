@@ -391,7 +391,7 @@ namespace rectpack {
 		};
 
 		auto max_side = [](const rect_type* const a, const rect_type* const b) {
-			return std::max(a->w, a->h) > std::max(b->w, b->h);
+			return a->get_wh().max_side_greater(b->get_wh());
 		};
 
 		auto max_width = [](const rect_type* const a, const rect_type* const b) {
