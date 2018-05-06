@@ -91,12 +91,8 @@ namespace rectpack {
 	}
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
-	class root_node : private empty_spaces_provider {
-		using base = empty_spaces_provider;
-		using base::add_empty_space;
-		using base::delete_empty_space;
-		using base::get_count_empty_spaces;
-		using base::get_empty_space;
+	class root_node {
+		empty_spaces_provider empty_spaces;
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
@@ -119,22 +115,22 @@ namespace rectpack {
 			initial_size = r;
 			current_aabb = {};
 
-			empty_spaces_provider::reset();
-			add_empty_space(rect_xywh(0, 0, r.w, r.h));
+			empty_spaces.reset();
+			empty_spaces.add(rect_xywh(0, 0, r.w, r.h));
 		}
 
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
-			for (int i = get_count_empty_spaces() - 1; i >= 0; --i) {
-				const auto candidate_space = get_empty_space(i);
+			for (int i = empty_spaces.get_count() - 1; i >= 0; --i) {
+				const auto candidate_space = empty_spaces.get(i);
 
 				auto accept_result = [this, i, image_rectangle, candidate_space](
 					const insert_result& inserted,
 					const bool flipping_necessary
 				) -> std::optional<output_rect_type> {
-					delete_empty_space(i);
+					empty_spaces.remove(i);
 
 					for (int s = 0; s < inserted.count; ++s) {
-						if (!add_empty_space(inserted.space_remainders[s])) {
+						if (!empty_spaces.add(inserted.space_remainders[s])) {
 							return std::nullopt;
 						}
 					}
