@@ -11,6 +11,11 @@ namespace rectpack {
 		int count = 0;
 		std::array<rect_ltrb, 2> space_remainders;
 
+		template <class... Args>
+		insert_result(Args&&... args) : space_remainders({ std::forward<Args>(args)... }) {
+			count = sizeof...(Args);
+		}
+
 		bool better_than(const insert_result& b) const {
 			return count < b.count;
 		}
@@ -28,19 +33,19 @@ namespace rectpack {
 		}
 
 		if (free_w == 0 && free_h == 0) {
-			return insert_result { 0, {} };
+			return insert_result();
 		}
 
 		if (free_w > 0 && free_h == 0) {
 			auto r = sp;
 			r.l += im.w;
-			return insert_result { 1, { r, {} } };
+			return insert_result(r);
 		}
 
 		if (free_w == 0 && free_h > 0) {
 			auto r = sp;
 			r.t += im.h;
-			return insert_result { 1, { r, {} } };
+			return insert_result(r);
 		}
 
 		/* 
@@ -49,20 +54,16 @@ namespace rectpack {
 		*/
 
 		if (free_w > free_h) {
-			return insert_result { 2,
-				{
-					rect_ltrb { sp.l + im.w, sp.t, sp.r, sp.b },
-					rect_ltrb { sp.l, sp.t + im.h, sp.l + im.w, sp.b }
-				}
-			};
+			return insert_result(
+				rect_ltrb(sp.l + im.w, sp.t, sp.r, sp.b),
+				rect_ltrb(sp.l, sp.t + im.h, sp.l + im.w, sp.b)
+			);
 		}
 
-		return insert_result { 2,
-			{
-				rect_ltrb { sp.l, sp.t + im.h, sp.r, sp.b },
-				rect_ltrb { sp.l + im.w, sp.t, sp.r, sp.t + im.h }
-			}
-		};
+		return insert_result(
+			rect_ltrb(sp.l, sp.t + im.h, sp.r, sp.b),
+			rect_ltrb(sp.l + im.w, sp.t, sp.r, sp.t + im.h)
+		);
 	}
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
