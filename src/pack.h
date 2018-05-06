@@ -139,25 +139,28 @@ namespace rectpack {
 						}
 					}
 
-					auto result = output_rect_type(
-						candidate_space.x,
-						candidate_space.y,
-						image_rectangle.w,
-						image_rectangle.h
-					);
-
 					if constexpr(allow_flip) {
-						result.flipped = flipping_necessary;
-
-						if (flipping_necessary) {
-							result.rect_wh::flip();
-						}
+						const auto result = output_rect_type(
+							candidate_space.x,
+							candidate_space.y,
+							image_rectangle.w,
+							image_rectangle.h,
+							flipping_necessary
+						);
 
 						expand_aabb_with(result);
 						return result;
 					}
 					else {
 						(void)flipping_necessary;
+
+						const auto result = output_rect_type(
+							candidate_space.x,
+							candidate_space.y,
+							image_rectangle.w,
+							image_rectangle.h
+						);
+
 						expand_aabb_with(result);
 						return result;
 					}
@@ -288,7 +291,7 @@ namespace rectpack {
 					root.reset(min_bin);
 
 					for (std::size_t i = 0; i < n; ++i) {
-						if (root.insert(*v[i])) {
+						if (root.insert(v[i]->get_wh())) {
 							current_area += v[i]->area();
 						}
 					}
@@ -299,7 +302,7 @@ namespace rectpack {
 
 				const bool all_inserted = [&]() {
 					for (std::size_t i = 0; i < n; ++i) {
-						if (!root.insert(*v[i])) {
+						if (!root.insert(v[i]->get_wh())) {
 							return false;
 						}
 					}
@@ -353,7 +356,7 @@ namespace rectpack {
 			root.reset(min_bin);
 
 			for (std::size_t i = 0; i < n; ++i) {
-				if (const auto ret = root.insert(*v[i])) {
+				if (const auto ret = root.insert(v[i]->get_wh())) {
 					*v[i] = *ret;
 
 					if (!push_successful(v[i])) {
