@@ -237,14 +237,16 @@ namespace rectpack2D {
 		
 		The search stops when the bin was successfully inserted into,
 		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
+
+		The function reports which of the rectangles did and did not fit in the end.
 	*/
 
 	template <class root_node_type, class F, class G, class... Comparators>
 	rect_wh find_best_packing(
 		const std::vector<typename root_node_type::output_rect_type*>& input, 
 		const int max_bin_side, 
-		F push_successful,
-		G push_unsuccessful,
+		F handle_successful_insertion,
+		G handle_unsuccessful_insertion,
 		const int discard_step,
 		Comparators... comparators
 	) {
@@ -269,55 +271,30 @@ namespace rectpack2D {
 
 		const auto max_bin = rect_wh(max_bin_side, max_bin_side);
 
-		std::optional<int> min_func;
-
-		int	best_func = 0;
-		int best_area = 0;
-		int current_area = 0;
-
-		bool fail = false;
+		std::optional<int> best_function;
+		int best_total_inserted = -1;
+		auto best_bin = max_bin;
 
 		thread_local root_node_type root = rect_wh();
-
-		auto candidate_bin = max_bin;
-		auto best_bin = candidate_bin;
-
-		root.reset(candidate_bin);
 
 		for (unsigned f = 0; f < order.size(); ++f) {
 			const auto& v = order[f];
 
-			int step = candidate_bin.w / 2;
-			root.reset(candidate_bin);
+			auto candidate_bin = max_bin;
+			candidate_bin.w /= 2;
+			candidate_bin.h /= 2;
 
-			while (true) {
-				if (candidate_bin.w > best_bin.w) {
-					/* 
-						If we are now going to attempt packing into a bin
-						that is bigger than the current minimum, abort.
-					*/
+			for (int step = max_bin.w / 2; ; step = std::max(1, step / 2)) {
+				root.reset(candidate_bin);
 
-					if (min_func) {
-						break;
-					}
-
-					current_area = 0;
-
-					root.reset(best_bin);
-
-					for (std::size_t i = 0; i < n; ++i) {
-						if (root.insert(v[i]->get_wh())) {
-							current_area += v[i]->area();
-						}
-					}
-
-					fail = true;
-					break;
-				}
+				int total_inserted_area = 0;
 
 				const bool all_inserted = [&]() {
 					for (std::size_t i = 0; i < n; ++i) {
-						if (!root.insert(v[i]->get_wh())) {
+						if (root.insert(v[i]->get_wh())) {
+							total_inserted_area += v[i]->area();
+						}
+						else {
 							return false;
 						}
 					}
@@ -326,6 +303,14 @@ namespace rectpack2D {
 				}();
 
 				if (all_inserted) {
+					/* Attempt was successful. Try with a smaller bin. */
+
+					/* Save the function if it performed the best. */
+					if (candidate_bin.area() <= best_bin.area()) {
+						best_function = f;
+						best_bin = candidate_bin;
+					}
+
 					if (step <= discard_step) {
 						break;
 					}
@@ -333,38 +318,36 @@ namespace rectpack2D {
 					candidate_bin.w -= step;
 					candidate_bin.h -= step;
 
-					/* Attempt was successful. Try with a smaller bin. */
 					root.reset(candidate_bin);
 				}
 				else {
 					candidate_bin.w += step;
 					candidate_bin.h += step;
 
-					/* Attempt ended in failure. Try with a bigger bin. */
-					root.reset(candidate_bin);
+					if (candidate_bin.w > best_bin.w) {
+						/* 
+							If we are now going to attempt packing into a bin
+							that is bigger than the current best, abort.
+
+							Additionally, track which function inserts the most area in total,
+							if all orders will fail to fit into the biggest bin.
+						*/
+
+						if (!best_function) {
+							if (total_inserted_area > best_total_inserted) {
+								best_function = f;
+								best_total_inserted = total_inserted_area;
+							}
+						}
+
+						break;
+					}
 				}
-
-				step /= 2;
-
-				if (!step) {
-					step = 1;
-				}
 			}
-
-			if (!fail && candidate_bin.area() <= best_bin.area()) {
-				best_bin = candidate_bin;
-				min_func = f;
-			}
-			else if (fail && current_area > best_area) {
-				best_area = current_area;
-				best_func = f;
-			}
-
-			fail = false;
 		}
 
 		{
-			const auto& v = order[min_func ? *min_func : best_func];
+			const auto& v = order[*best_function];
 
 			root.reset(best_bin);
 
@@ -372,12 +355,12 @@ namespace rectpack2D {
 				if (const auto ret = root.insert(v[i]->get_wh())) {
 					*v[i] = *ret;
 
-					if (!push_successful(v[i])) {
+					if (!handle_successful_insertion(v[i])) {
 						break;
 					}
 				}
 				else {
-					if (!push_unsuccessful(v[i])) {
+					if (!handle_unsuccessful_insertion(v[i])) {
 						break;
 					}
 				}

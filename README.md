@@ -13,8 +13,8 @@ The multiple-bin functionality was removed. It is now up to you what is to be do
 		const std::vector<rect_xywhf*>& input, 
 		const int max_bin_side, 
 		const bool allow_flip, 
-		F push_successful,
-		G push_unsuccessful,
+		F handle_successful_insertion,
+		G handle_unsuccessful_insertion,
 		const int discard_step,
 		Comparators... comparators
 	)
