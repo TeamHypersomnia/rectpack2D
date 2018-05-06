@@ -108,7 +108,6 @@ namespace rectpack2D {
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
 
 	private:
-		rect_wh initial_size;
 		rect_wh current_aabb;
 
 		void expand_aabb_with(const output_rect_type& result) {
@@ -122,16 +121,18 @@ namespace rectpack2D {
 		}
 
 		void reset(const rect_wh& r) {
-			initial_size = r;
 			current_aabb = {};
 
 			empty_spaces.reset();
 			empty_spaces.add(rect_xywh(0, 0, r.w, r.h));
 		}
 
-		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
+		template <class F>
+		std::optional<output_rect_type> insert(const rect_wh image_rectangle, F report_candidate_empty_space) {
 			for (int i = empty_spaces.get_count() - 1; i >= 0; --i) {
 				const auto candidate_space = empty_spaces.get(i);
+
+				report_candidate_empty_space(candidate_space);
 
 				auto accept_result = [this, i, image_rectangle, candidate_space](
 					const insert_result& inserted,
@@ -217,12 +218,16 @@ namespace rectpack2D {
 			return std::nullopt;
 		}
 
-		auto get_size() const {
-			return initial_size;
+		decltype(auto) insert(const rect_wh& image_rectangle) {
+			return insert(image_rectangle, [](auto&){ });
 		}
 
 		auto get_rects_aabb() const {
 			return current_aabb;
+		}
+
+		const auto& get_empty_spaces() const {
+			return empty_spaces;
 		}
 	};
 
@@ -262,7 +267,7 @@ namespace rectpack2D {
 
 		const auto n = input.size();
 
-		rect_wh min_bin = rect_wh(max_bin_side, max_bin_side);
+		const auto max_bin = rect_wh(max_bin_side, max_bin_side);
 
 		std::optional<int> min_func;
 
@@ -273,16 +278,20 @@ namespace rectpack2D {
 		bool fail = false;
 
 		thread_local root_node_type root = rect_wh();
-		root.reset(min_bin);
+
+		auto candidate_bin = max_bin;
+		auto best_bin = candidate_bin;
+
+		root.reset(candidate_bin);
 
 		for (unsigned f = 0; f < order.size(); ++f) {
 			const auto& v = order[f];
 
-			int step = min_bin.w / 2;
-			root.reset(min_bin);
+			int step = candidate_bin.w / 2;
+			root.reset(candidate_bin);
 
 			while (true) {
-				if (root.get_size().w > min_bin.w) {
+				if (candidate_bin.w > best_bin.w) {
 					/* 
 						If we are now going to attempt packing into a bin
 						that is bigger than the current minimum, abort.
@@ -294,7 +303,7 @@ namespace rectpack2D {
 
 					current_area = 0;
 
-					root.reset(min_bin);
+					root.reset(best_bin);
 
 					for (std::size_t i = 0; i < n; ++i) {
 						if (root.insert(v[i]->get_wh())) {
@@ -321,20 +330,18 @@ namespace rectpack2D {
 						break;
 					}
 
-					auto new_size = root.get_size();
-					new_size.w -= step;
-					new_size.h -= step;
+					candidate_bin.w -= step;
+					candidate_bin.h -= step;
 
 					/* Attempt was successful. Try with a smaller bin. */
-					root.reset(new_size);
+					root.reset(candidate_bin);
 				}
 				else {
-					auto new_size = root.get_size();
-					new_size.w += step;
-					new_size.h += step;
+					candidate_bin.w += step;
+					candidate_bin.h += step;
 
 					/* Attempt ended in failure. Try with a bigger bin. */
-					root.reset(new_size);
+					root.reset(candidate_bin);
 				}
 
 				step /= 2;
@@ -344,11 +351,11 @@ namespace rectpack2D {
 				}
 			}
 
-			if (!fail && (min_bin.area() >= root.get_size().area())) {
-				min_bin = root.get_size();
+			if (!fail && candidate_bin.area() <= best_bin.area()) {
+				best_bin = candidate_bin;
 				min_func = f;
 			}
-			else if (fail && (current_area > best_area)) {
+			else if (fail && current_area > best_area) {
 				best_area = current_area;
 				best_func = f;
 			}
@@ -359,7 +366,7 @@ namespace rectpack2D {
 		{
 			const auto& v = order[min_func ? *min_func : best_func];
 
-			root.reset(min_bin);
+			root.reset(best_bin);
 
 			for (std::size_t i = 0; i < n; ++i) {
 				if (const auto ret = root.insert(v[i]->get_wh())) {
