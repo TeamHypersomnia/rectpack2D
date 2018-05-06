@@ -4,8 +4,10 @@
 #include <type_traits>
 
 namespace rectpack {
+	using space_rect = rect_xywh;
+
 	class default_empty_spaces {
-		std::vector<rect_ltrb> empty_spaces;
+		std::vector<space_rect> empty_spaces;
 
 	protected:
 		void delete_empty_space(const int i) {
@@ -13,7 +15,7 @@ namespace rectpack {
 			empty_spaces.pop_back();
 		}
 
-		bool add_empty_space(const rect_ltrb r) {
+		bool add_empty_space(const space_rect r) {
 			empty_spaces.emplace_back(r);
 			return true;
 		}
@@ -33,7 +35,7 @@ namespace rectpack {
 
 	template <int MAX_SPACES>
 	class static_empty_spaces {
-		std::array<rect_ltrb, MAX_SPACES> empty_spaces;
+		std::array<space_rect, MAX_SPACES> empty_spaces;
 		int count_spaces = 0;
 
 	protected:
@@ -42,7 +44,7 @@ namespace rectpack {
 			--count_spaces;
 		}
 
-		bool add_empty_space(const rect_ltrb r) {
+		bool add_empty_space(const space_rect r) {
 			if (count_spaces < static_cast<int>(empty_spaces.size())) {
 				empty_spaces[count_spaces] = r;
 				++count_spaces;

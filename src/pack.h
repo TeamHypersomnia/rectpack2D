@@ -9,7 +9,7 @@
 namespace rectpack {
 	struct insert_result {
 		int count = 0;
-		std::array<rect_ltrb, 2> space_remainders;
+		std::array<space_rect, 2> space_remainders;
 
 		template <class... Args>
 		insert_result(Args&&... args) : space_remainders({ std::forward<Args>(args)... }) {
@@ -23,10 +23,10 @@ namespace rectpack {
 
 	inline std::optional<insert_result> insert(
 		const rect_wh im, /* Image rectangle */
-		const rect_ltrb sp /* Space rectangle */
+		const space_rect sp /* Space rectangle */
 	) {
-		const auto free_w = sp.w() - im.w;
-		const auto free_h = sp.h() - im.h;
+		const auto free_w = sp.w - im.w;
+		const auto free_h = sp.h - im.h;
 
 		if (free_w < 0 || free_h < 0) {
 			return std::nullopt;
@@ -38,13 +38,15 @@ namespace rectpack {
 
 		if (free_w > 0 && free_h == 0) {
 			auto r = sp;
-			r.l += im.w;
+			r.x += im.w;
+			r.w -= im.w;
 			return insert_result(r);
 		}
 
 		if (free_w == 0 && free_h > 0) {
 			auto r = sp;
-			r.t += im.h;
+			r.y += im.h;
+			r.h -= im.h;
 			return insert_result(r);
 		}
 
@@ -54,16 +56,38 @@ namespace rectpack {
 		*/
 
 		if (free_w > free_h) {
-			return insert_result(
-				rect_ltrb(sp.l + im.w, sp.t, sp.r, sp.b),
-				rect_ltrb(sp.l, sp.t + im.h, sp.l + im.w, sp.b)
+			const auto bigger_split = space_rect(
+				sp.x + im.w,
+				sp.y,
+			   	free_w,
+			   	sp.h
 			);
+
+			const auto lesser_split = space_rect(
+				sp.x,
+				sp.y + im.h,
+				im.w,
+				free_h
+			);
+
+			return insert_result(bigger_split, lesser_split);
 		}
 
-		return insert_result(
-			rect_ltrb(sp.l, sp.t + im.h, sp.r, sp.b),
-			rect_ltrb(sp.l + im.w, sp.t, sp.r, sp.t + im.h)
+		const auto bigger_split = space_rect(
+			sp.x,
+			sp.y + im.h,
+			sp.w,
+			free_h
 		);
+
+		const auto lesser_split = space_rect(
+			sp.x + im.w,
+			sp.y,
+			free_w,
+			im.h
+		);
+
+		return insert_result(bigger_split, lesser_split);
 	}
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
@@ -82,8 +106,8 @@ namespace rectpack {
 		rect_wh current_aabb;
 
 		void expand_aabb_with(const output_rect_type& result) {
-			current_aabb.w = std::max(current_aabb.w, result.r());
-			current_aabb.h = std::max(current_aabb.h, result.b()); 
+			current_aabb.w = std::max(current_aabb.w, result.x + result.w);
+			current_aabb.h = std::max(current_aabb.h, result.y + result.h); 
 		}
 
 	public:
@@ -96,7 +120,7 @@ namespace rectpack {
 			current_aabb = {};
 
 			empty_spaces_provider::reset();
-			add_empty_space(rect_ltrb(0, 0, r.w, r.h));
+			add_empty_space(rect_xywh(0, 0, r.w, r.h));
 		}
 
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
@@ -116,8 +140,8 @@ namespace rectpack {
 					}
 
 					auto result = output_rect_type(
-						candidate_space.l,
-						candidate_space.t,
+						candidate_space.x,
+						candidate_space.y,
 						image_rectangle.w,
 						image_rectangle.h
 					);
