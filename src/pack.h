@@ -6,7 +6,7 @@
 #include "pack_structs.h"
 #include "empty_spaces.h"
 
-namespace rectpack {
+namespace rectpack2D {
 	struct insert_result {
 		int count = 0;
 		std::array<space_rect, 2> space_remainders;
@@ -173,7 +173,7 @@ namespace rectpack {
 				};
 
 				auto try_to_insert = [&](const rect_wh& img) {
-					return rectpack::insert(img, candidate_space);
+					return rectpack2D::insert(img, candidate_space);
 				};
 
 				if constexpr(!allow_flip) {

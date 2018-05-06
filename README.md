@@ -30,7 +30,7 @@ You can also manually perform insertions, avoiding the need to create a vector o
 	//... now fill rects_for_packing_algorithm with inputs
 	// and then pack it:
 
-	auto packing_root = rectpack::root_node({ max_size, max_size });
+	auto packing_root = rectpack2D::root_node({ max_size, max_size });
 
 	vec2i result_size;
 	

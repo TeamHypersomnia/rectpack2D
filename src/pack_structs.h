@@ -1,6 +1,6 @@
 #pragma once
 
-namespace rectpack {
+namespace rectpack2D {
 	struct rect_xywh;
 
 	struct rect_wh {

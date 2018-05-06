@@ -3,7 +3,7 @@
 #include <vector>
 #include <type_traits>
 
-namespace rectpack {
+namespace rectpack2D {
 	using space_rect = rect_xywh;
 
 	class default_empty_spaces {
