@@ -4,9 +4,6 @@
 #include <type_traits>
 
 namespace rectpack {
-	template <bool allow_flip>
-	using output_rect = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
-
 	class default_empty_spaces {
 		std::vector<rect_ltrb> empty_spaces;
 
@@ -46,7 +43,7 @@ namespace rectpack {
 		}
 
 		bool add_empty_space(const rect_ltrb r) {
-			if (count_spaces < empty_spaces.size()) {
+			if (count_spaces < static_cast<int>(empty_spaces.size())) {
 				empty_spaces[count_spaces] = r;
 				++count_spaces;
 

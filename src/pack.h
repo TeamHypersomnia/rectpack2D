@@ -65,9 +65,6 @@ namespace rectpack {
 		};
 	}
 
-	template <bool allow_flip>
-	using output_rect = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
-
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
 	class root_node : private empty_spaces_provider {
 		using base = empty_spaces_provider;
@@ -76,17 +73,19 @@ namespace rectpack {
 		using base::get_count_empty_spaces;
 		using base::get_empty_space;
 
+	public:
+		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
+
+	private:
 		rect_wh initial_size;
 		rect_wh current_aabb;
 
-		void expand_aabb_with(const output_rect<allow_flip>& result) {
+		void expand_aabb_with(const output_rect_type& result) {
 			current_aabb.w = std::max(current_aabb.w, result.r());
 			current_aabb.h = std::max(current_aabb.h, result.b()); 
 		}
 
 	public:
-		using output_rect_type = output_rect<allow_flip>;
-
 		root_node(const rect_wh& r) {
 			reset(r);
 		}
