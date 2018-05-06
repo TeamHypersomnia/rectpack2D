@@ -2,6 +2,7 @@
 #include <optional>
 #include <vector>
 #include <array>
+#include <variant>
 
 #include "pack_structs.h"
 #include "empty_spaces.h"
@@ -235,132 +236,177 @@ namespace rectpack2D {
 		This function will do a binary search on viable bin sizes,
 		starting from max_bin_side.
 		
+		It will do so for all provided rectangle orders.
+		Only the best order will have results written to.
+
 		The search stops when the bin was successfully inserted into,
 		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
 
 		The function reports which of the rectangles did and did not fit in the end.
 	*/
 
-	template <class root_node_type, class F, class G, class... Comparators>
-	rect_wh find_best_packing(
-		const std::vector<typename root_node_type::output_rect_type*>& input, 
-		const int max_bin_side, 
-		F handle_successful_insertion,
-		G handle_unsuccessful_insertion,
+	template <class F, class G>
+	struct finder_input {
+		const int max_bin_side;
+		const int discard_step;
+		F handle_successful_insertion;
+		G handle_unsuccessful_insertion;
+	};
+
+	template <class F, class G>
+	auto make_finder_input(
+		const int max_bin_side,
 		const int discard_step,
-		Comparators... comparators
+		F&& handle_successful_insertion,
+		G&& handle_unsuccessful_insertion
 	) {
-		using rect_type = typename root_node_type::output_rect_type;
+		return finder_input<F, G> { 
+			max_bin_side, discard_step, std::move(handle_successful_insertion), std::move(handle_unsuccessful_insertion)
+		};
+	};
 
-		constexpr auto count_funcs = sizeof...(Comparators);
-		thread_local std::array<std::vector<rect_type*>, count_funcs> order;
+	using total_area_type = int;
 
-		{
-			std::size_t f = 0;
+	template <
+		class root_node_type, 
+		class F
+	>
+	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
+		root_node_type& root,
+		F for_each_rect,
+		const rect_wh starting_bin,
+		const int discard_step
+	) {
+		auto candidate_bin = starting_bin;
+		candidate_bin.w /= 2;
+		candidate_bin.h /= 2;
 
-			auto make_order = [&f, &input](auto& comparator) {
-				order[f] = input;
-				std::sort(order[f].begin(), order[f].end(), comparator);
-				++f;
-			};
+		for (int step = starting_bin.w / 2; ; step = std::max(1, step / 2)) {
+			root.reset(candidate_bin);
 
-			(make_order(comparators), ...);
+			int total_inserted_area = 0;
+
+			const bool all_inserted = [&]() {
+				return for_each_rect([&](const auto& rect) {
+					if (root.insert(rect)) {
+						total_inserted_area += rect.area();
+						return true;
+					}
+					else {
+						return false;
+					}
+				});
+			}();
+
+			if (all_inserted) {
+				/* Attempt was successful. Try with a smaller bin. */
+
+				if (step <= discard_step) {
+					return candidate_bin;
+				}
+
+				candidate_bin.w -= step;
+				candidate_bin.h -= step;
+
+				root.reset(candidate_bin);
+			}
+			else {
+				candidate_bin.w += step;
+				candidate_bin.h += step;
+
+				if (candidate_bin.w > starting_bin.w) {
+					/* 
+						If we are now going to attempt packing into a bin
+						that is bigger than the current best, abort.
+					*/
+
+					return total_inserted_area;
+				}
+			}
 		}
+	}
 
-		const auto n = input.size();
 
-		const auto max_bin = rect_wh(max_bin_side, max_bin_side);
+	template <
+		class root_node_type, 
+		class OrderType,
+		class F,
+		class I
+	>
+	rect_wh find_best_packing_impl(F for_each_order, const I input) {
+		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		std::optional<int> best_function;
+		OrderType* best_order = nullptr;
+
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
 
 		thread_local root_node_type root = rect_wh();
 
-		for (unsigned f = 0; f < order.size(); ++f) {
-			const auto& v = order[f];
+		auto get_rect = [](auto& r) -> decltype(auto) {
+			/* Allow both orders that are pointers and plain objects. */
+			if constexpr(std::is_pointer_v<std::remove_reference_t<decltype(r)>>) {
+				return (*r);
+			}
+			else {
+				return (r);
+			}
+		};
 
-			auto candidate_bin = max_bin;
-			candidate_bin.w /= 2;
-			candidate_bin.h /= 2;
-
-			for (int step = max_bin.w / 2; ; step = std::max(1, step / 2)) {
-				root.reset(candidate_bin);
-
-				int total_inserted_area = 0;
-
-				const bool all_inserted = [&]() {
-					for (std::size_t i = 0; i < n; ++i) {
-						if (root.insert(v[i]->get_wh())) {
-							total_inserted_area += v[i]->area();
-						}
-						else {
+		for_each_order ([&](OrderType& current_order) {
+			const auto packing = best_packing_for_ordering(
+				root,
+				[&](auto inserter) {
+					for (auto& r : current_order) {
+						if (!inserter(get_rect(r).get_wh())) {
 							return false;
 						}
 					}
 
 					return true;
-				}();
+				},
+				best_bin,
+				input.discard_step
+			);
 
-				if (all_inserted) {
-					/* Attempt was successful. Try with a smaller bin. */
-
-					/* Save the function if it performed the best. */
-					if (candidate_bin.area() <= best_bin.area()) {
-						best_function = f;
-						best_bin = candidate_bin;
-					}
-
-					if (step <= discard_step) {
-						break;
-					}
-
-					candidate_bin.w -= step;
-					candidate_bin.h -= step;
-
-					root.reset(candidate_bin);
-				}
-				else {
-					candidate_bin.w += step;
-					candidate_bin.h += step;
-
-					if (candidate_bin.w > best_bin.w) {
-						/* 
-							If we are now going to attempt packing into a bin
-							that is bigger than the current best, abort.
-
-							Additionally, track which function inserts the most area in total,
-							if all orders will fail to fit into the biggest bin.
-						*/
-
-						if (!best_function) {
-							if (total_inserted_area > best_total_inserted) {
-								best_function = f;
-								best_total_inserted = total_inserted_area;
-							}
-						}
-
-						break;
+			if (const auto total_inserted = std::get_if<total_area_type>(&packing)) {
+				/*
+					Track which function inserts the most area in total,
+					if all orders will fail to fit into the largest allowed bin.
+				*/
+				if (best_order == nullptr) {
+					if (*total_inserted > best_total_inserted) {
+						best_order = std::addressof(current_order);
+						best_total_inserted = *total_inserted;
 					}
 				}
 			}
-		}
+			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
+				/* Save the function if it performed the best. */
+				if (result_bin->area() <= best_bin.area()) {
+					best_order = std::addressof(current_order);
+					best_bin = *result_bin;
+				}
+			}
+		});
 
 		{
-			const auto& v = order[*best_function];
-
+			assert(best_order != nullptr);
+			
 			root.reset(best_bin);
 
-			for (std::size_t i = 0; i < n; ++i) {
-				if (const auto ret = root.insert(v[i]->get_wh())) {
-					*v[i] = *ret;
+			for (auto& rr : *best_order) {
+				auto& rect = get_rect(rr);
 
-					if (!handle_successful_insertion(v[i])) {
+				if (const auto ret = root.insert(rect.get_wh())) {
+					rect = *ret;
+
+					if (!input.handle_successful_insertion(rect)) {
 						break;
 					}
 				}
 				else {
-					if (!handle_unsuccessful_insertion(v[i])) {
+					if (!input.handle_unsuccessful_insertion(rect)) {
 						break;
 					}
 				}
@@ -370,12 +416,74 @@ namespace rectpack2D {
 		}
 	}
 
-	template <class root_node_type, class... Args>
-	rect_wh find_best_packing_default(Args&&... args) {
-		using rect_type = typename root_node_type::output_rect_type;
+	template <class T>
+	using output_rect_t = typename T::output_rect_type;
+
+	template <class root_node_type, class I>
+	decltype(auto) find_best_packing_dont_sort(
+		std::vector<output_rect_t<root_node_type>>& subjects,
+		const I& input
+	) {
+		return find_best_packing_impl<root_node_type, std::remove_reference_t<decltype(subjects)>>(
+			[&subjects](auto callback) { callback(subjects); },
+			input
+		);
+	}
+
+	template <class root_node_type, class I, class Comparator, class... Comparators>
+	decltype(auto) find_best_packing(
+		std::vector<output_rect_t<root_node_type>>& subjects,
+		const I& input,
+		Comparator comparator,
+		Comparators... comparators
+	) {
+		using rect_type = output_rect_t<root_node_type>;
+		using order_type = std::vector<rect_type*>;
+
+		constexpr auto count_orders = 1 + sizeof...(Comparators);
+		thread_local std::array<order_type, count_orders> orders;
+
+		{
+			/* order[0] will always exist since this overload requires at least one comparator */
+			auto& initial_pointers = orders[0];
+			initial_pointers.clear();
+
+			for (auto& s : subjects) {
+				initial_pointers.emplace_back(std::addressof(s));
+			}
+
+			for (std::size_t i = 1; i < count_orders; ++i) {
+				orders[i] = initial_pointers;
+			}
+		}
+
+		std::size_t f = 0;
+
+		auto make_order = [&f](auto& predicate) {
+			std::sort(orders[f].begin(), orders[f].end(), predicate);
+			++f;
+		};
+
+		make_order(comparator);
+		(make_order(comparators), ...);
+
+		return find_best_packing_impl<root_node_type, order_type>(
+			[](auto callback){ for (auto& o : orders) { callback(o); } },
+			input
+		);
+	}
+
+
+	template <class root_node_type, class I>
+	decltype(auto) find_best_packing(
+		std::vector<output_rect_t<root_node_type>>& subjects,
+		const I& input
+	) {
+		using rect_type = output_rect_t<root_node_type>;
 
 		return find_best_packing<root_node_type>(
-			std::forward<Args>(args)...,
+			subjects,
+			input,
 			[](const rect_type* const a, const rect_type* const b) {
 				return a->area() > b->area();
 			},
