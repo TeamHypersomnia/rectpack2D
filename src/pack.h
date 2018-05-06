@@ -6,6 +6,12 @@
 #include "pack_structs.h"
 #include "empty_spaces.h"
 
+#ifdef __MSVC__
+#define RECTPACK_INLINE __forceinline
+#else
+#define RECTPACK_INLINE __attribute__((always_inline))
+#endif
+
 namespace rectpack {
 	struct insert_result {
 		int count = 0;
@@ -56,13 +62,6 @@ namespace rectpack {
 		*/
 
 		if (free_w > free_h) {
-			const auto bigger_split = space_rect(
-				sp.x + im.w,
-				sp.y,
-			   	free_w,
-			   	sp.h
-			);
-
 			const auto lesser_split = space_rect(
 				sp.x,
 				sp.y + im.h,
@@ -70,15 +69,15 @@ namespace rectpack {
 				free_h
 			);
 
-			return insert_result(bigger_split, lesser_split);
-		}
+			const auto bigger_split = space_rect(
+				sp.x + im.w,
+				sp.y,
+			   	free_w,
+			   	sp.h
+			);
 
-		const auto bigger_split = space_rect(
-			sp.x,
-			sp.y + im.h,
-			sp.w,
-			free_h
-		);
+			return insert_result(lesser_split, bigger_split);
+		}
 
 		const auto lesser_split = space_rect(
 			sp.x + im.w,
@@ -87,12 +86,20 @@ namespace rectpack {
 			im.h
 		);
 
-		return insert_result(bigger_split, lesser_split);
+		const auto bigger_split = space_rect(
+			sp.x,
+			sp.y + im.h,
+			sp.w,
+			free_h
+		);
+
+		return insert_result(lesser_split, bigger_split);
 	}
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
 	class root_node : private empty_spaces_provider {
-		empty_spaces_provider empty_spaces;
+		empty_spaces_provider lesser_spaces;
+		empty_spaces_provider bigger_spaces;
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
@@ -106,17 +113,35 @@ namespace rectpack {
 			current_aabb.h = std::max(current_aabb.h, result.y + result.h); 
 		}
 
-		std::optional<output_rect_type> try_insert(
+		RECTPACK_INLINE std::optional<output_rect_type> try_insert(
 			const rect_wh image_rectangle,
-			const space_rect candidate_space
+			empty_spaces_provider& spaces,
+			const int i
 		) {
-			auto accept_result = [this, image_rectangle, candidate_space] (
+			const auto candidate_space = spaces.get(i);
+
+			auto accept_result = [this, image_rectangle, &spaces, i, candidate_space] (
 				const insert_result& inserted,
 				const bool flipping_necessary
 			) -> std::optional<output_rect_type> {
-				for (int s = 0; s < inserted.count; ++s) {
-					if (!empty_spaces.add(inserted.space_remainders[s])) {
-						return std::nullopt;
+				spaces.remove(i);
+
+				{
+					const auto& remainders = inserted.space_remainders;
+					const auto n = inserted.count;
+
+					if (n == 2) {
+						/* The first one is always the lesser split */
+						lesser_spaces.add(remainders[0]);
+						bigger_spaces.add(remainders[1]);
+					}
+					else if (n == 1) {
+						if (remainders[0].get_wh().max_side_greater(image_rectangle)) {
+							bigger_spaces.add(remainders[0]);
+						}
+						else {
+							lesser_spaces.add(remainders[0]);
+						}
 					}
 				}
 
@@ -200,14 +225,23 @@ namespace rectpack {
 			initial_size = r;
 			current_aabb = {};
 
-			empty_spaces.reset();
-			empty_spaces.add(rect_xywh(0, 0, r.w, r.h));
+			lesser_spaces.reset();
+
+			bigger_spaces.reset();
+			bigger_spaces.add(rect_xywh(0, 0, r.w, r.h));
 		}
 
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle) {
-			for (int i = empty_spaces.count() - 1; i >= 0; --i) {
-				if (const auto result = try_insert(image_rectangle, empty_spaces.get(i))) {
-					empty_spaces.remove(i);
+			for (int i = lesser_spaces.count() - 1; i >= 0; --i) {
+				//for (unsigned i = 0; i < lesser_spaces.count(); ++i) {
+				if (const auto result = try_insert(image_rectangle, lesser_spaces, i)) {
+					return result;
+				}
+			}
+
+			for (int i = bigger_spaces.count() - 1; i >= 0; --i) {
+				//for (unsigned i = 0; i < bigger_spaces.count(); ++i) {
+				if (const auto result = try_insert(image_rectangle, bigger_spaces, i)) {
 					return result;
 				}
 			}
