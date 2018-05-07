@@ -60,4 +60,6 @@ namespace rectpack2D {
 			return rect_wh(w, h);
 		}
 	};
+
+	using space_rect = rect_xywh;
 }
