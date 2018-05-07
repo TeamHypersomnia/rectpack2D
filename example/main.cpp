@@ -103,7 +103,7 @@ int main() {
 	{
 		/* Example 4: Manually perform insertions. This way you can try your own best-bin finding logic. */
 
-		auto packing_root = root_type({ 1000, 1000 });
+		auto packing_root = root_type({ max_side, max_side });
 
 		for (auto& r : rectangles) {
 			if (const auto inserted_rectangle = packing_root.insert(std::as_const(r).get_wh())) {
