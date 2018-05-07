@@ -1,6 +1,6 @@
 #pragma once
 #include <variant>
-#include "pack_structs.h"
+#include "rect_structs.h"
 
 namespace rectpack2D {
 	/*

@@ -3,7 +3,7 @@
 #include <vector>
 #include <type_traits>
 
-#include "3rdparty/rectpack2D/src/pack_structs.h"
+#include "rect_structs.h"
 
 namespace rectpack2D {
 	class default_empty_spaces {

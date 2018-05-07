@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
-#include "pack_structs.h"
+#include "rect_structs.h"
 
 namespace rectpack2D {
 	struct created_splits {
