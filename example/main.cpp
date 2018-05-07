@@ -1,6 +1,7 @@
 #include <iostream>
 #include "../src/finders_interface.h"
 
+/* For description of the algorithm, please see the README.md */
 using namespace rectpack2D;
 
 int main() {
@@ -23,6 +24,12 @@ int main() {
 	};
 
 	const auto max_side = 1000;
+
+	/*
+		The search stops when the bin was successfully inserted into,
+		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
+	*/
+
 	const auto discard_step = 1;
 
 	std::vector<rect_type> rectangles;
@@ -99,8 +106,8 @@ int main() {
 		auto packing_root = root_type({ 1000, 1000 });
 
 		for (auto& r : rectangles) {
-			if (const auto n = packing_root.insert(std::as_const(r).get_wh())) {
-				r = *n;
+			if (const auto inserted_rectangle = packing_root.insert(std::as_const(r).get_wh())) {
+				r = *inserted_rectangle;
 			}
 			else {
 				std::cout << "Failed to insert a rectangle." << std::endl;
@@ -113,6 +120,5 @@ int main() {
 		std::cout << result_size.w << " " << result_size.h << std::endl;
 	}
 
-	std::cout << "TEST" << std::endl;
 	return 0;
 }
