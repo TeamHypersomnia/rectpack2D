@@ -7,7 +7,7 @@ This is a refactored and **highly optimized** branch of the original library whi
 
 ## Example results
 
-### Arbitrary game sprites - 582 subjects.  
+### Arbitrary game sprites: 582 subjects.  
 
 **Runtime: 0.8 ms**  
 **Wasted pixels: 10982 (1% - equivalent of a 105 x 105 square)**  
@@ -21,7 +21,7 @@ In color:
 
 ![2](example/images/atlas_small_color.png)
 
-### Arbitrary game sprites + Japanese glyphs - 3264 subjects.  
+### Arbitrary game sprites + Japanese glyphs: 3264 subjects.  
 
 **Runtime: 4 ms**  
 **Wasted pixels: 15538 (1% - equivalent of a 125 x 125 square)**  
