@@ -13,6 +13,14 @@ int main() {
 
 	using rect_ptr = rect_type*;
 
+	/*
+		Note: 
+
+		The multiple-bin functionality was removed. 
+		It is now up to you what is to be done with unsuccessful insertions.
+		You may initialize another search when this happens.
+	*/
+
 	auto report_successful = [](rect_type& rect) {
 		/* Continue */
 		return true;
@@ -43,7 +51,15 @@ int main() {
 	rectangles.emplace_back(rect_xywh(0, 0, 85, 875));
 	
 	{
-		/* Example 1: Find best packing with default orders. */
+		/*
+			Example 1: Find best packing with default orders. 
+
+			If you pass no comparators whatsoever, 
+			the standard collection of 6 orders:
+		   	by area, by perimeter, by bigger side, by width, by height and by "pathological multiplier"
+			- will be passed by default.
+		*/
+
 		const auto result_size = find_best_packing<root_type>(
 			rectangles,
 			make_finder_input(
@@ -58,7 +74,7 @@ int main() {
 	}
 
 	{
-		/* Example 2: Find best packing with custom orders. */
+		/* Example 2: Find best packing using all provided custom rectangle orders. */
 
 		auto my_custom_order_1 = [](const rect_ptr a, const rect_ptr b) {
 			return a->get_wh().pathological_mult() > b->get_wh().pathological_mult();

@@ -35,17 +35,14 @@ namespace rectpack2D {
 	};
 
 	/*
-		All provided functions
-	*/
-
-	/*
 		Finds the best packing for the rectangles,
 		just in the order that they were passed.
 	*/
-	template <class root_node_type, class I>
+
+	template <class root_node_type, class F, class G>
 	rect_wh find_best_packing_dont_sort(
 		std::vector<output_rect_t<root_node_type>>& subjects,
-		const I& input
+		const finder_input<F, G>& input
 	) {
 		return find_best_packing_impl<root_node_type, std::remove_reference_t<decltype(subjects)>>(
 			[&subjects](auto callback) { callback(subjects); },
@@ -53,10 +50,10 @@ namespace rectpack2D {
 		);
 	}
 
-	template <class root_node_type, class I, class Comparator, class... Comparators>
+	template <class root_node_type, class F, class G, class Comparator, class... Comparators>
 	rect_wh find_best_packing(
 		std::vector<output_rect_t<root_node_type>>& subjects,
-		const I& input,
+		const finder_input<F, G>& input,
 		Comparator comparator,
 		Comparators... comparators
 	) {
@@ -97,10 +94,10 @@ namespace rectpack2D {
 	}
 
 
-	template <class root_node_type, class I>
+	template <class root_node_type, class F, class G>
 	rect_wh find_best_packing(
 		std::vector<output_rect_t<root_node_type>>& subjects,
-		const I& input
+		const finder_input<F, G>& input
 	) {
 		using rect_type = output_rect_t<root_node_type>;
 
