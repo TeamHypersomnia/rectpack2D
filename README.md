@@ -7,6 +7,9 @@ This is a refactored and **highly optimized** branch of the original library whi
 
 ## Example results
 
+Tests were conducted on a ``Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz``.
+The binary was built with clang 6.0.1 with an -03 switch.
+
 ### Arbitrary game sprites: 582 subjects.  
 
 **Runtime: 0.8 ms**  
