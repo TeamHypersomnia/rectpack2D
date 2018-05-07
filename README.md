@@ -40,7 +40,7 @@ In color:
 This is a header-only library.
 Just include the ``src/finders_interface.h`` and you should be good to go.
 
-For example use, see ``examples/main.cpp``.
+For an example use, see ``example/main.cpp``.
 
 ## Algorithm
 
