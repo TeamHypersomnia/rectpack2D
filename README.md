@@ -51,7 +51,7 @@ The library started as an implementation of this algorithm:
 http://blackpawn.com/texts/lightmaps/default.html
 
 The current version somewhat derives from the concept described there -  
-however, it uses just a **vector of empty spaces, instead of a tree** - this was a performance breakthrough.  
+however, it uses just a **vector of empty spaces, instead of a tree** - this turned out to be a performance breakthrough.  
 
 Given
 
@@ -76,12 +76,13 @@ Given initial bin, which is a square of size S, we initialize the first empty sp
 empty_spaces.push_back(rect_xywh(0, 0, S, S));
 ````
 
-Now we want to insert the first image rectangle.  
+Now, we'd like to insert the first image rectangle.  
+
 To do this, we iterate the vector of empty spaces **backwards** and look for an empty space into which the image can fit.  
 For now, we only have the S x S square: let's save the index of this candidate empty space,  
 which is ``candidate_space_index = 0;``  
 
-If our image is strictly smaller than the root, we have something like this:
+If our image is strictly smaller than the candidate space, we have something like this:
 
 ![diag01](example/images/diag01.png)
 
