@@ -124,12 +124,12 @@ Two problems remain unsolved:
 		- We start with the size specified by the library user. Typically, it would be the maximum texture size allowed on a particular GPU.
 		- If the packing was successful on the given bin size, decrease the size and try to pack again.
 		- If the packing has failed on the given bin size (some rectangles could be further inserted), increase the size and try to pack again.
-	- The search is aborted if we've successfully inserted into a bin and the dimensions of the next candidate would differ by less than ``discard_step``.
+	- The search is aborted if we've successfully inserted into a bin and the dimensions of the next candidate would differ from the previous by less than ``discard_step``.
 		- This variable exists so that we may easily trade accuracy for a speedup. ``discard_step = 1`` yields the highest accuracy.
 	- The search is performed first by decreasing the bin size by both width and height, keeping it in square shape.
 		- Then we do the same, but only decreasing width.
 		- Then we do the same, but only decreasing height.
-		- The last two turned out to be a breakthrough in packing tightness. It seems important to consider non-square bins.
+		- The last two were a breakthrough in packing tightness. It turns out important to consider non-square bins.
 - In what order should the rectangles be inserted so that they pack the tightest?
 	- By default, the library tries 6 decreasing orders:
 		- By area.
