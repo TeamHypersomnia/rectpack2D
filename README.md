@@ -143,7 +143,7 @@ Two problems remain unsolved:
 	- We perform a binary search.
 		- We start with the size specified by the library user. Typically, it would be the maximum texture size allowed on a particular GPU.
 		- If the packing was successful on the given bin size, decrease the size and try to pack again.
-		- If the packing has failed on the given bin size (some rectangles could be further inserted), increase the size and try to pack again.
+		- If the packing has failed on the given bin size - because some rectangles could not be further inserted - increase the size and try to pack again.
 	- The search is aborted if we've successfully inserted into a bin and the dimensions of the next candidate would differ from the previous by less than ``discard_step``.
 		- This variable exists so that we may easily trade accuracy for a speedup. ``discard_step = 1`` yields the highest accuracy.
 	- The search is performed first by decreasing the bin size by both width and height, keeping it in square shape.
