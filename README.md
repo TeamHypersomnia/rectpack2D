@@ -50,7 +50,7 @@ The library started as an implementation of this algorithm:
 
 http://blackpawn.com/texts/lightmaps/default.html
 
-It somewhat derives from the concept described there -  
+The current version somewhat derives from the concept described there -  
 however, it uses just a **vector of empty spaces, instead of a tree** - this was a performance breakthrough.  
 
 Given
@@ -78,15 +78,16 @@ empty_spaces.push_back(rect_xywh(0, 0, S, S));
 
 Now we want to insert the first image rectangle.  
 To do this, we iterate the vector of empty spaces **backwards** and look for an empty space into which the image can fit.  
-For now, we only have the S x S square: let's save the index of this candidate empty space, which is ``candidate_space_index = 0;``
+For now, we only have the S x S square: let's save the index of this candidate empty space,  
+which is ``candidate_space_index = 0;``  
 
 If our image is strictly smaller than the root, we have something like this:
 
-[5](example/images/diag01.png)
+[diag01](example/images/diag01.png)
 
-The blue is our image rectangle.
-We now calculate the gray rectangles labeled as "bigger split" and "lesser split",
-and save them like this:
+The blue is our image rectangle.  
+We now calculate the gray rectangles labeled as "bigger split" and "lesser split",  
+and save them like this:  
 
 ```cpp
 // Erase the space that we've just inserted to, by swapping and popping.
@@ -104,7 +105,7 @@ which will make better use of empty spaces overall.
 
 #### Corner cases:
 
-- If the image dimensions equal the dimensions of the candidate empty space,
+- If the image dimensions equal the dimensions of the candidate empty space (image fits exactly),
 	- we just delete the space and create no splits.  
 - If the image fits into the candidate empty space, but exactly one of the image dimensions equals the respective dimension of the candidate empty space (e.g. image = 20x40, candidate space = 30x40)
 	- we delete the space and create a single split. In this case a 10x40 space.
