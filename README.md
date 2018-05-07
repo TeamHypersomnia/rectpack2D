@@ -83,10 +83,10 @@ which is ``candidate_space_index = 0;``
 
 If our image is strictly smaller than the root, we have something like this:
 
-[diag01](example/images/diag01.png)
+![diag01](example/images/diag01.png)
 
 The blue is our image rectangle.  
-We now calculate the gray rectangles labeled as "bigger split" and "lesser split",  
+We now calculate the gray rectangles labeled as "bigger split" and "smaller split",  
 and save them like this:  
 
 ```cpp
@@ -96,11 +96,11 @@ empty_spaces.pop_back();
 
 // Save the resultant splits
 empty_spaces.push_back(bigger_split);
-empty_spaces.push_back(lesser_split);
+empty_spaces.push_back(smaller_split);
 ````
 
-Notice that we push the lesser split *after* the bigger one.  
-This is fairly important, because later the candidate images will encounter the lesser splits first,  
+Notice that we push the smaller split *after* the bigger one.  
+This is fairly important, because later the candidate images will encounter the smaller splits first,  
 which will make better use of empty spaces overall.  
 
 #### Corner cases:
