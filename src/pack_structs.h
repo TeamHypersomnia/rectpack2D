@@ -1,6 +1,29 @@
 #pragma once
+#include <utility>
 
 namespace rectpack2D {
+	using total_area_type = int;
+
+	template <class F, class G>
+	struct finder_input {
+		const int max_bin_side;
+		const int discard_step;
+		F handle_successful_insertion;
+		G handle_unsuccessful_insertion;
+	};
+
+	template <class F, class G>
+	auto make_finder_input(
+		const int max_bin_side,
+		const int discard_step,
+		F&& handle_successful_insertion,
+		G&& handle_unsuccessful_insertion
+	) {
+		return finder_input<F, G> { 
+			max_bin_side, discard_step, std::move(handle_successful_insertion), std::move(handle_unsuccessful_insertion)
+		};
+	};
+
 	struct rect_wh {
 		rect_wh() : w(0), h(0) {}
 		rect_wh(const int w, const int h) : w(w), h(h) {}
