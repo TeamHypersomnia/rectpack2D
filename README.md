@@ -96,7 +96,7 @@ empty_spaces.pop_back();
 // Save the resultant splits
 empty_spaces.push_back(bigger_split);
 empty_spaces.push_back(lesser_split);
-````cpp
+````
 
 Notice that we push the lesser split *after* the bigger one.  
 This is fairly important, because later the candidate images will encounter the lesser splits first,  
