@@ -35,6 +35,22 @@ In color:
 
 ![4](example/images/atlas_big_color.png)
 
+
+### Japanese glyphs + some GUI sprites: 3122 subjects.  
+
+**Runtime: 3.5 - 7 ms**  
+**Wasted pixels: 9288 (1.23% - equivalent of a 96 x 96 square)**  
+
+Output (866 x 871):
+
+![5](example/images/atlas_tiny.png)
+
+In color:  
+(black is wasted space)
+
+![6](example/images/atlas_tiny_color.png)
+
+
 ## Usage
 
 This is a header-only library.
