@@ -21,13 +21,13 @@ namespace rectpack2D {
 		}
 
 		int min_side() const {
-			return h > w ? h : w;
+			return h < w ? h : w;
 		}
 
 		int	area() const { return w * h; }
 	   	int perimeter() const { return 2 * w + 2 * h; }
 
-		int pathological_mult() const {
+		float pathological_mult() const {
 			return float(max_side()) / min_side() * area();
 		}
 	};

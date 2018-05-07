@@ -10,7 +10,7 @@ This is a refactored and **highly optimized** branch of the original library whi
 ### Arbitrary game sprites: 582 subjects.  
 
 **Runtime: 0.8 ms**  
-**Wasted pixels: 10982 (1% - equivalent of a 105 x 105 square)**  
+**Wasted pixels: 10982 (0.24% - equivalent of a 105 x 105 square)**  
 
 Output (1896 x 2382):
 
@@ -24,7 +24,7 @@ In color:
 ### Arbitrary game sprites + Japanese glyphs: 3264 subjects.  
 
 **Runtime: 4 ms**  
-**Wasted pixels: 15538 (1% - equivalent of a 125 x 125 square)**  
+**Wasted pixels: 15538 (0.31% - equivalent of a 125 x 125 square)**  
 
 Output (2116 x 2382):
 
