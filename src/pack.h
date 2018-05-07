@@ -271,17 +271,35 @@ namespace rectpack2D {
 		class root_node_type, 
 		class F
 	>
-	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
+	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		root_node_type& root,
 		F for_each_rect,
 		const rect_wh starting_bin,
-		const int discard_step
+		const int discard_step,
+		const int in_direction
 	) {
 		auto candidate_bin = starting_bin;
-		candidate_bin.w /= 2;
-		candidate_bin.h /= 2;
 
-		for (int step = starting_bin.w / 2; ; step = std::max(1, step / 2)) {
+		int starting_step = 0;
+
+		if (in_direction == 0) {
+			starting_step = starting_bin.w / 2;
+
+			candidate_bin.w /= 2;
+			candidate_bin.h /= 2;
+		}
+		else if(in_direction == 1) {
+			starting_step = starting_bin.w / 2;
+
+			candidate_bin.w /= 2;
+		}
+		else {
+			starting_step = starting_bin.h / 2;
+
+			candidate_bin.h /= 2;
+		}
+
+		for (int step = starting_step; ; step = std::max(1, step / 2)) {
 			root.reset(candidate_bin);
 
 			int total_inserted_area = 0;
@@ -305,27 +323,79 @@ namespace rectpack2D {
 					return candidate_bin;
 				}
 
-				candidate_bin.w -= step;
-				candidate_bin.h -= step;
+				if (in_direction == 0) {
+					candidate_bin.w -= step;
+					candidate_bin.h -= step;
+				}
+				else if (in_direction == 1) {
+					candidate_bin.w -= step;
+				}
+				else {
+					candidate_bin.h -= step;
+				}
 
 				root.reset(candidate_bin);
 			}
 			else {
-				candidate_bin.w += step;
-				candidate_bin.h += step;
+				if (in_direction == 0) {
+					candidate_bin.w += step;
+					candidate_bin.h += step;
 
-				if (candidate_bin.w > starting_bin.w) {
-					/* 
-						If we are now going to attempt packing into a bin
-						that is bigger than the current best, abort.
-					*/
-
-					return total_inserted_area;
+					if (candidate_bin.area() > starting_bin.area()) {
+						return total_inserted_area;
+					}
 				}
+				else if (in_direction == 1) {
+					candidate_bin.w += step;
+
+					if (candidate_bin.w > starting_bin.w) {
+						return total_inserted_area;
+					}
+				}
+				else {
+					candidate_bin.h += step;
+
+					if (candidate_bin.h > starting_bin.h) {
+						return total_inserted_area;
+					}
+				}
+
 			}
 		}
 	}
 
+	template <
+		class root_node_type, 
+		class F
+	>
+	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
+		root_node_type& root,
+		F for_each_rect,
+		const rect_wh starting_bin,
+		const int discard_step
+	) {
+		const auto try_pack = [&](const int i, const rect_wh from_bin) {
+			return best_packing_for_ordering_impl(root, for_each_rect, from_bin, discard_step, i);
+		};
+
+		const auto best_result = try_pack(0, starting_bin);
+
+		if (const auto failed = std::get_if<total_area_type>(&best_result)) {
+			return *failed;
+		}
+
+		auto best_bin = std::get<rect_wh>(best_result);
+
+		for (int i = 1; i < 3; ++i) {
+			const auto trial = try_pack(i, best_bin);
+
+			if (const auto better = std::get_if<rect_wh>(&trial)) {
+				best_bin = *better;
+			}
+		}
+
+		return best_bin;
+	}
 
 	template <
 		class root_node_type, 
