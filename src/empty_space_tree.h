@@ -6,20 +6,12 @@ namespace rectpack2D {
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
 	class root_node {
+		rect_wh current_aabb;
 		empty_spaces_provider empty_spaces;
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
 
-	private:
-		rect_wh current_aabb;
-
-		void expand_aabb_with(const output_rect_type& result) {
-			current_aabb.w = std::max(current_aabb.w, result.x + result.w);
-			current_aabb.h = std::max(current_aabb.h, result.y + result.h); 
-		}
-
-	public:
 		root_node(const rect_wh& r) {
 			reset(r);
 		}
@@ -59,7 +51,7 @@ namespace rectpack2D {
 							flipping_necessary
 						);
 
-						expand_aabb_with(result);
+						current_aabb.expand_with(result);
 						return result;
 					}
 					else {
@@ -72,7 +64,7 @@ namespace rectpack2D {
 							image_rectangle.h
 						);
 
-						expand_aabb_with(result);
+						current_aabb.expand_with(result);
 						return result;
 					}
 				};

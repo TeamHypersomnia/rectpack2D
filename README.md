@@ -89,7 +89,7 @@ Let us create a vector and call it empty_spaces.
 std::vector<rect_xywh> empty_spaces;
 ````
 
-Given initial bin, which is a square of size S, we initialize the first empty space.
+Given a user-specified initial bin, which is a square of some size S, we initialize the first empty space.
 
 ```cpp
 empty_spaces.push_back(rect_xywh(0, 0, S, S));

@@ -11,8 +11,8 @@
 #include "best_bin_finder.h"
 
 namespace rectpack2D {
-	template <class tree_type>
-	using output_rect_t = typename tree_type::output_rect_type;
+	template <class root_node_type>
+	using output_rect_t = typename root_node_type::output_rect_type;
 
 	template <class F, class G>
 	struct finder_input {

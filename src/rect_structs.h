@@ -30,6 +30,12 @@ namespace rectpack2D {
 		float pathological_mult() const {
 			return float(max_side()) / min_side() * area();
 		}
+
+		template <class R>
+		void expand_with(const R& r) {
+			w = std::max(w, r.x + r.w);
+			h = std::max(h, r.y + r.h);
+		}
 	};
 
 	struct rect_xywh {
