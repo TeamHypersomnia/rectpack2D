@@ -9,6 +9,11 @@ namespace rectpack2D {
 
 		The search stops when the bin was successfully inserted into,
 		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
+
+		If the search fails, that is, we could not fit into even the starting rect,
+		we return the amount of space inserted in total.
+
+		If the search succeeds, that is, we've found a better viable bin, we return it.
 	*/
 
 	template <class empty_spaces_type, class F>
@@ -17,19 +22,19 @@ namespace rectpack2D {
 		F for_each_rect,
 		const rect_wh starting_bin,
 		const int discard_step,
-		const int in_direction
+		const int which_dimension
 	) {
 		auto candidate_bin = starting_bin;
 
 		int starting_step = 0;
 
-		if (in_direction == 0) {
+		if (which_dimension == 0) {
 			starting_step = starting_bin.w / 2;
 
 			candidate_bin.w /= 2;
 			candidate_bin.h /= 2;
 		}
-		else if(in_direction == 1) {
+		else if (which_dimension == 1) {
 			starting_step = starting_bin.w / 2;
 
 			candidate_bin.w /= 2;
@@ -64,11 +69,11 @@ namespace rectpack2D {
 					return candidate_bin;
 				}
 
-				if (in_direction == 0) {
+				if (which_dimension == 0) {
 					candidate_bin.w -= step;
 					candidate_bin.h -= step;
 				}
-				else if (in_direction == 1) {
+				else if (which_dimension == 1) {
 					candidate_bin.w -= step;
 				}
 				else {
@@ -80,7 +85,7 @@ namespace rectpack2D {
 			else {
 				/* Attempt ended with failure. Try with a bigger bin. */
 
-				if (in_direction == 0) {
+				if (which_dimension == 0) {
 					candidate_bin.w += step;
 					candidate_bin.h += step;
 
@@ -88,7 +93,7 @@ namespace rectpack2D {
 						return total_inserted_area;
 					}
 				}
-				else if (in_direction == 1) {
+				else if (which_dimension == 1) {
 					candidate_bin.w += step;
 
 					if (candidate_bin.w > starting_bin.w) {
@@ -189,7 +194,7 @@ namespace rectpack2D {
 			if (const auto total_inserted = std::get_if<total_area_type>(&packing)) {
 				/*
 					Track which function inserts the most area in total,
-					if all orders will fail to fit into the largest allowed bin.
+					just in case that all orders will fail to fit into the largest allowed bin.
 				*/
 				if (best_order == nullptr) {
 					if (*total_inserted > best_total_inserted) {
