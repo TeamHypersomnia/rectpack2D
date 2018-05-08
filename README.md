@@ -1,4 +1,4 @@
-[Check out this modern re-implementation of the library.](https://github.com/TeamHypersomnia/rectpack2D/tree/hypersomnia)
+[Check out this modern re-implementation of the library.](https://github.com/TeamHypersomnia/rectpack2D/tree/master)
 
 # rectpack2D
 
