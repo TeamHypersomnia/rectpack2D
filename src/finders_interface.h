@@ -5,7 +5,7 @@
 #include <variant>
 
 #include "insert_and_split.h"
-#include "empty_space_vector.h"
+#include "empty_spaces.h"
 #include "empty_space_allocators.h"
 
 #include "best_bin_finder.h"
