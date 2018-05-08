@@ -119,8 +119,6 @@ empty_spaces.push_back(bigger_split);
 empty_spaces.push_back(smaller_split);
 ````
 
-To see how the splits are calculated, [see this source](src/insert_and_split.h).
-
 Notice that we push the smaller split *after* the bigger one.  
 This is fairly important, because later the candidate images will encounter the smaller splits first,  
 which will make better use of empty spaces overall.  
@@ -131,6 +129,9 @@ which will make better use of empty spaces overall.
 	- we just delete the space and create no splits.  
 - If the image fits into the candidate empty space, but exactly one of the image dimensions equals the respective dimension of the candidate empty space (e.g. image = 20x40, candidate space = 30x40)
 	- we delete the space and create a single split. In this case a 10x40 space.
+
+To see the complete, modular procedure for calculating the splits (along with the corner cases),
+[see this source](src/insert_and_split.h).
 
 If the insertion fails, we also try the same procedure for a flipped image.
 
