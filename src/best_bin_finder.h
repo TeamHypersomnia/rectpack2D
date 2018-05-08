@@ -3,6 +3,21 @@
 #include "rect_structs.h"
 
 namespace rectpack2D {
+	template <class T>
+	auto& dereference(const T& r) {
+		/* 
+			This will allow us to pass orderings that consist of pointers,
+			as well as ones that are just plain objects in a vector.
+	   */	   
+
+		if constexpr(std::is_pointer_v<T>) {
+			return *r;
+		}
+		else {
+			return r;
+		}
+	};
+
 	/*
 		This function will do a binary search on viable bin sizes,
 		starting from starting_bin.
@@ -16,10 +31,10 @@ namespace rectpack2D {
 		If the search succeeds, that is, we've found a better viable bin, we return it.
 	*/
 
-	template <class empty_spaces_type, class F>
+	template <class empty_spaces_type, class O>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		empty_spaces_type& root,
-		F for_each_rect,
+		O ordering,
 		const rect_wh starting_bin,
 		const int discard_step,
 		const int which_dimension
@@ -51,15 +66,18 @@ namespace rectpack2D {
 			int total_inserted_area = 0;
 
 			const bool all_inserted = [&]() {
-				return for_each_rect([&](const auto& rect) {
-					if (root.insert(rect)) {
+				for (const auto& r : ordering) {
+					const auto& rect = dereference(r);
+
+					if (root.insert(rect.get_wh())) {
 						total_inserted_area += rect.area();
-						return true;
 					}
 					else {
 						return false;
 					}
-				});
+				}
+
+				return true;
 			}();
 
 			if (all_inserted) {
@@ -112,15 +130,15 @@ namespace rectpack2D {
 		}
 	}
 
-	template <class empty_spaces_type, class F>
+	template <class empty_spaces_type, class O>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
 		empty_spaces_type& root,
-		F for_each_rect,
+		O&& ordering,
 		const rect_wh starting_bin,
 		const int discard_step
 	) {
 		const auto try_pack = [&](const int i, const rect_wh from_bin) {
-			return best_packing_for_ordering_impl(root, for_each_rect, from_bin, discard_step, i);
+			return best_packing_for_ordering_impl(root, std::forward<O>(ordering), from_bin, discard_step, i);
 		};
 
 		const auto best_result = try_pack(0, starting_bin);
@@ -165,28 +183,10 @@ namespace rectpack2D {
 
 		thread_local empty_spaces_type root = rect_wh();
 
-		auto get_rect = [](auto& r) -> decltype(auto) {
-			/* Allow both orders that are pointers and plain objects. */
-			if constexpr(std::is_pointer_v<std::remove_reference_t<decltype(r)>>) {
-				return (*r);
-			}
-			else {
-				return (r);
-			}
-		};
-
 		for_each_order ([&](OrderType& current_order) {
 			const auto packing = best_packing_for_ordering(
 				root,
-				[&](auto inserter) {
-					for (auto& r : current_order) {
-						if (!inserter(get_rect(r).get_wh())) {
-							return false;
-						}
-					}
-
-					return true;
-				},
+				current_order,
 				best_bin,
 				input.discard_step
 			);
@@ -218,7 +218,7 @@ namespace rectpack2D {
 			root.reset(best_bin);
 
 			for (auto& rr : *best_order) {
-				auto& rect = get_rect(rr);
+				auto& rect = dereference(rr);
 
 				if (const auto ret = root.insert(rect.get_wh())) {
 					rect = *ret;
