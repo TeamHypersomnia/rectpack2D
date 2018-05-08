@@ -11,8 +11,8 @@
 #include "best_bin_finder.h"
 
 namespace rectpack2D {
-	template <class root_node_type>
-	using output_rect_t = typename root_node_type::output_rect_type;
+	template <class empty_spaces_type>
+	using output_rect_t = typename empty_spaces_type::output_rect_type;
 
 	template <class F, class G>
 	struct finder_input {
@@ -39,25 +39,26 @@ namespace rectpack2D {
 		just in the order that they were passed.
 	*/
 
-	template <class root_node_type, class F, class G>
+	template <class empty_spaces_type, class F, class G>
 	rect_wh find_best_packing_dont_sort(
-		std::vector<output_rect_t<root_node_type>>& subjects,
+		std::vector<output_rect_t<empty_spaces_type>>& subjects,
 		const finder_input<F, G>& input
 	) {
-		return find_best_packing_impl<root_node_type, std::remove_reference_t<decltype(subjects)>>(
+		return find_best_packing_impl<empty_spaces_type, std::remove_reference_t<decltype(subjects)>>(
 			[&subjects](auto callback) { callback(subjects); },
 			input
 		);
 	}
 
-	template <class root_node_type, class F, class G, class Comparator, class... Comparators>
+	template <class empty_spaces_type, class F, class G, class Comparator, class... Comparators>
 	rect_wh find_best_packing(
-		std::vector<output_rect_t<root_node_type>>& subjects,
+		std::vector<output_rect_t<empty_spaces_type>>& subjects,
 		const finder_input<F, G>& input,
+
 		Comparator comparator,
 		Comparators... comparators
 	) {
-		using rect_type = output_rect_t<root_node_type>;
+		using rect_type = output_rect_t<empty_spaces_type>;
 		using order_type = std::vector<rect_type*>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
@@ -87,23 +88,24 @@ namespace rectpack2D {
 		make_order(comparator);
 		(make_order(comparators), ...);
 
-		return find_best_packing_impl<root_node_type, order_type>(
+		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[](auto callback){ for (auto& o : orders) { callback(o); } },
 			input
 		);
 	}
 
 
-	template <class root_node_type, class F, class G>
+	template <class empty_spaces_type, class F, class G>
 	rect_wh find_best_packing(
-		std::vector<output_rect_t<root_node_type>>& subjects,
+		std::vector<output_rect_t<empty_spaces_type>>& subjects,
 		const finder_input<F, G>& input
 	) {
-		using rect_type = output_rect_t<root_node_type>;
+		using rect_type = output_rect_t<empty_spaces_type>;
 
-		return find_best_packing<root_node_type>(
+		return find_best_packing<empty_spaces_type>(
 			subjects,
 			input,
+
 			[](const rect_type* const a, const rect_type* const b) {
 				return a->area() > b->area();
 			},

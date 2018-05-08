@@ -5,28 +5,28 @@ namespace rectpack2D {
 	class default_empty_spaces;
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
-	class root_node {
+	class empty_spaces {
 		rect_wh current_aabb;
-		empty_spaces_provider empty_spaces;
+		empty_spaces_provider spaces;
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
 
-		root_node(const rect_wh& r) {
+		empty_spaces(const rect_wh& r) {
 			reset(r);
 		}
 
 		void reset(const rect_wh& r) {
 			current_aabb = {};
 
-			empty_spaces.reset();
-			empty_spaces.add(rect_xywh(0, 0, r.w, r.h));
+			spaces.reset();
+			spaces.add(rect_xywh(0, 0, r.w, r.h));
 		}
 
 		template <class F>
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle, F report_candidate_empty_space) {
-			for (int i = empty_spaces.get_count() - 1; i >= 0; --i) {
-				const auto candidate_space = empty_spaces.get(i);
+			for (int i = spaces.get_count() - 1; i >= 0; --i) {
+				const auto candidate_space = spaces.get(i);
 
 				report_candidate_empty_space(candidate_space);
 
@@ -34,10 +34,10 @@ namespace rectpack2D {
 					const created_splits& splits,
 					const bool flipping_necessary
 				) -> std::optional<output_rect_type> {
-					empty_spaces.remove(i);
+					spaces.remove(i);
 
 					for (int s = 0; s < splits.count; ++s) {
-						if (!empty_spaces.add(splits.spaces[s])) {
+						if (!spaces.add(splits.spaces[s])) {
 							return std::nullopt;
 						}
 					}
@@ -122,8 +122,8 @@ namespace rectpack2D {
 			return current_aabb;
 		}
 
-		const auto& get_empty_spaces() const {
-			return empty_spaces;
+		const auto& get_spaces() const {
+			return spaces;
 		}
 	};
 }

@@ -11,9 +11,9 @@ namespace rectpack2D {
 		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
 	*/
 
-	template <class root_node_type, class F>
+	template <class empty_spaces_type, class F>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
-		root_node_type& root,
+		empty_spaces_type& root,
 		F for_each_rect,
 		const rect_wh starting_bin,
 		const int discard_step,
@@ -107,9 +107,9 @@ namespace rectpack2D {
 		}
 	}
 
-	template <class root_node_type, class F>
+	template <class empty_spaces_type, class F>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
-		root_node_type& root,
+		empty_spaces_type& root,
 		F for_each_rect,
 		const rect_wh starting_bin,
 		const int discard_step
@@ -145,7 +145,7 @@ namespace rectpack2D {
 	*/
 
 	template <
-		class root_node_type, 
+		class empty_spaces_type, 
 		class OrderType,
 		class F,
 		class I
@@ -158,7 +158,7 @@ namespace rectpack2D {
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
 
-		thread_local root_node_type root = rect_wh();
+		thread_local empty_spaces_type root = rect_wh();
 
 		auto get_rect = [](auto& r) -> decltype(auto) {
 			/* Allow both orders that are pointers and plain objects. */
