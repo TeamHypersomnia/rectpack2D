@@ -17,12 +17,12 @@ The binary was built with ``clang 6.0.0``, using an -03 switch.
 
 Output (1896 x 2382):
 
-![1](example/images/atlas_small.png)
+![1](images/atlas_small.png)
 
 In color:  
 (black is wasted space)
 
-![2](example/images/atlas_small_color.png)
+![2](images/atlas_small_color.png)
 
 ### Arbitrary game sprites + Japanese glyphs: 3264 subjects.  
 
@@ -31,12 +31,12 @@ In color:
 
 Output (2116 x 2382):
 
-![3](example/images/atlas_big.png)
+![3](images/atlas_big.png)
 
 In color:  
 (black is wasted space)
 
-![4](example/images/atlas_big_color.png)
+![4](images/atlas_big_color.png)
 
 
 ### Japanese glyphs + some GUI sprites: 3122 subjects.  
@@ -46,12 +46,12 @@ In color:
 
 Output (866 x 871):
 
-![5](example/images/atlas_tiny.png)
+![5](images/atlas_tiny.png)
 
 In color:  
 (black is wasted space)
 
-![6](example/images/atlas_tiny_color.png)
+![6](images/atlas_tiny_color.png)
 
 
 ## Usage
@@ -103,7 +103,7 @@ which is ``candidate_space_index = 0;``
 
 If our image is strictly smaller than the candidate space, we have something like this:
 
-![diag01](example/images/diag01.png)
+![diag01](images/diag01.png)
 
 The blue is our image rectangle.  
 We now calculate the gray rectangles labeled as "bigger split" and "smaller split",  
