@@ -2,5 +2,8 @@
 .DS_Store
 .idea
 *.iml
-
+example/clang_commands.sh
+example/main
+example/main.cpp.o
+example/run.sh
 /CMakeLists.txt
