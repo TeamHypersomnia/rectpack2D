@@ -1,0 +1,5 @@
+- what about just resizing when there is no more space left?
+	- then iterate over all empty spaces and resize those that are touching the edge
+		- there might be none like this, though
+	- then we can ditch iterating orders
+	- we could then easily make it an on-line algorithm
