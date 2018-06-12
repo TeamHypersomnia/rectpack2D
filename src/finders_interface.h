@@ -70,7 +70,9 @@ namespace rectpack2D {
 			initial_pointers.clear();
 
 			for (auto& s : subjects) {
-				initial_pointers.emplace_back(std::addressof(s));
+				if (s.area() > 0) {
+					initial_pointers.emplace_back(std::addressof(s));
+				}
 			}
 
 			for (std::size_t i = 1; i < count_orders; ++i) {
