@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 project(rectpack2D)
 
+set(RESULT_EXE_WORKING_DIR "${PROJECT_SOURCE_DIR}/example")
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	message("Building with Clang (${CMAKE_CXX_COMPILER}).")
 	set(CLANG ON)
@@ -60,8 +62,16 @@ if(MSVC)
 	# ensure that you run it with "input.cfg" in the command arguments.
 
 	set_target_properties(rectpack2D 
-		PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/example"
+		PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${RESULT_EXE_WORKING_DIR}
 	)
 
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT rectpack2D)
+endif()
+
+if(UNIX)
+	add_custom_target(run
+		COMMAND rectpack2D
+		DEPENDS rectpack2D
+		WORKING_DIRECTORY ${RESULT_EXE_WORKING_DIR} 
+	)
 endif()

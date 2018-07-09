@@ -7,7 +7,7 @@ image: Visual Studio 2017 Preview
 configuration: Release
 build:
   parallel: true                  # enable MSBuild parallel builds
-  project: dev/Hypersomnia.sln      # path to Visual Studio solution or project
+  project: build/rectpack2D.sln      # path to Visual Studio solution or project
   verbosity: minimal
 install:
   - git submodule update --init --recursive
@@ -15,8 +15,8 @@ install:
 test:
   assemblies:
     only:
-      - '**\*.Hypersomnia.exe'
-      - '**\*.Hypersomnia-Debug.exe'
+      - '**\*.rectpack2D.exe'
+      - '**\*.rectpack2D-Debug.exe'
 
 notifications:
   - provider: Email
@@ -28,11 +28,11 @@ notifications:
 
 
 before_build:
-  - mkdir dev
-  - cd dev
+  - mkdir build
+  - cd build
   - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_IN_CONSOLE_MODE=1 ..
 
 test_script:
-  - ps: 'cd ../hypersomnia'
-  - ps: '& "../dev/$env:CONFIGURATION/Hypersomnia.exe" --unit-tests-only'
+  - ps: 'cd ../example'
+  - ps: '& "../build/$env:CONFIGURATION/rectpack2D.exe" --unit-tests-only'
   - ps: 'if($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode ) }'
