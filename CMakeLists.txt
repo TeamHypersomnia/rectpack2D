@@ -58,9 +58,6 @@ elseif(GCC)
 endif()
 
 if(MSVC)
-	# if you want to run the program on examples/input.cfg,
-	# ensure that you run it with "input.cfg" in the command arguments.
-
 	set_target_properties(rectpack2D 
 		PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${RESULT_EXE_WORKING_DIR}
 	)
