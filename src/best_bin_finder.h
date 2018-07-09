@@ -5,7 +5,7 @@
 
 namespace rectpack2D {
 	template <class T>
-	auto& dereference(const T& r) {
+	auto& dereference(T& r) {
 		/* 
 			This will allow us to pass orderings that consist of pointers,
 			as well as ones that are just plain objects in a vector.

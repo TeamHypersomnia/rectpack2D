@@ -49,6 +49,10 @@ namespace rectpack2D {
 
 		int	area() const { return w * h; }
 		int perimeter() const { return 2 * w + 2 * h; }
+
+		auto get_wh() const {
+			return rect_wh(w, h);
+		}
 	};
 
 	struct rect_xywhf {

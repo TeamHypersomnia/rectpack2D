@@ -45,7 +45,9 @@ namespace rectpack2D {
 		std::vector<output_rect_t<empty_spaces_type>>& subjects,
 		const finder_input<F, G>& input
 	) {
-		return find_best_packing_impl<empty_spaces_type, std::remove_reference_t<decltype(subjects)>>(
+		using order_type = std::remove_reference_t<decltype(subjects)>;
+
+		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[&subjects](auto callback) { callback(subjects); },
 			input
 		);

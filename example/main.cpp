@@ -37,12 +37,12 @@ int main() {
 		You may initialize another search when this happens.
 	*/
 
-	auto report_successful = [](rect_type& rect) {
+	auto report_successful = [](rect_type&) {
 		/* Continue */
 		return true;
 	};
 
-	auto report_unsuccessful = [](rect_type& rect) {
+	auto report_unsuccessful = [](rect_type&) {
 		/* Abort */
 		return false;
 	};
