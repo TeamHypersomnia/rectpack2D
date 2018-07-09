@@ -25,7 +25,7 @@ namespace rectpack2D {
 
 		template <class F>
 		std::optional<output_rect_type> insert(const rect_wh image_rectangle, F report_candidate_empty_space) {
-			for (int i = spaces.get_count() - 1; i >= 0; --i) {
+			for (int i = static_cast<int>(spaces.get_count()) - 1; i >= 0; --i) {
 				const auto candidate_space = spaces.get(i);
 
 				report_candidate_empty_space(candidate_space);
@@ -54,7 +54,7 @@ namespace rectpack2D {
 						current_aabb.expand_with(result);
 						return result;
 					}
-					else {
+					else if constexpr(!allow_flip) {
 						(void)flipping_necessary;
 
 						const auto result = output_rect_type(
