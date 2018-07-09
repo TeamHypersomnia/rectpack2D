@@ -1,0 +1,38 @@
+version: 1.0.{build}
+branches:
+  only:
+    - master
+
+image: Visual Studio 2017 Preview
+configuration: Release
+build:
+  parallel: true                  # enable MSBuild parallel builds
+  project: dev/Hypersomnia.sln      # path to Visual Studio solution or project
+  verbosity: minimal
+install:
+  - git submodule update --init --recursive
+
+test:
+  assemblies:
+    only:
+      - '**\*.Hypersomnia.exe'
+      - '**\*.Hypersomnia-Debug.exe'
+
+notifications:
+  - provider: Email
+    to:
+      - some@email.com
+    on_build_success: false
+    on_build_failure: false
+    on_build_status_changed: false
+
+
+before_build:
+  - mkdir dev
+  - cd dev
+  - cmake -G "Visual Studio 15 2017 Win64" -DBUILD_IN_CONSOLE_MODE=1 ..
+
+test_script:
+  - ps: 'cd ../hypersomnia'
+  - ps: '& "../dev/$env:CONFIGURATION/Hypersomnia.exe" --unit-tests-only'
+  - ps: 'if($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode ) }'
