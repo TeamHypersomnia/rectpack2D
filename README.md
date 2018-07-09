@@ -56,13 +56,44 @@ In color:
 
 ![6](images/atlas_tiny_color.png)
 
-
 ## Usage
 
 This is a header-only library.
 Just include the ``src/finders_interface.h`` and you should be good to go.
 
 For an example use, see ``example/main.cpp``.
+
+## Building the example
+
+### Windows
+
+From the repository's folder, run:
+
+```bash
+mkdir build
+cd build
+cmake -G "Visual Studio 15 2017 Win64" ..
+````
+
+Then just build the generated ``.sln`` file using the newest Visual Studio Preview.
+
+### Linux
+
+From the repository's folder, run:
+
+```bash
+cmake/build_example.sh Release gcc g++
+cd build/current
+ninja run
+````
+
+Or, if you want to use clang, run:
+
+```bash
+cmake/build_example.sh Release clang clang++
+cd build/current
+ninja run
+````
 
 ## Algorithm
 
