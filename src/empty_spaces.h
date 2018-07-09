@@ -9,6 +9,16 @@ namespace rectpack2D {
 		rect_wh current_aabb;
 		empty_spaces_provider spaces;
 
+		/* MSVC fix for non-conformant if constexpr implementation */
+
+		static auto make_output_rect(const int x, const int y, const int w, const int h) {
+			return rect_xywh(x, y, w, h);
+		}
+
+		static auto make_output_rect(const int x, const int y, const int w, const int h, const bool flipped) {
+			return rect_xywhf(x, y, w, h, flipped);
+		}
+
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
 
@@ -43,7 +53,7 @@ namespace rectpack2D {
 					}
 
 					if constexpr(allow_flip) {
-						const auto result = output_rect_type(
+						const auto result = make_output_rect(
 							candidate_space.x,
 							candidate_space.y,
 							image_rectangle.w,
@@ -57,7 +67,7 @@ namespace rectpack2D {
 					else if constexpr(!allow_flip) {
 						(void)flipping_necessary;
 
-						const auto result = output_rect_type(
+						const auto result = make_output_rect(
 							candidate_space.x,
 							candidate_space.y,
 							image_rectangle.w,
