@@ -217,7 +217,7 @@ namespace rectpack2D {
 			const auto packing = best_packing_for_ordering(
 				root,
 				current_order,
-				best_bin,
+				max_bin,
 				input.discard_step
 			);
 
