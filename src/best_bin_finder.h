@@ -205,7 +205,13 @@ namespace rectpack2D {
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
 
+		/* 
+			The root node is re-used on the TLS. 
+			It is always reset before any packing attempt.
+		*/
+
 		thread_local empty_spaces_type root = rect_wh();
+		root.flipping_mode = input.flipping_mode;
 
 		for_each_order ([&](OrderType& current_order) {
 			const auto packing = best_packing_for_ordering(

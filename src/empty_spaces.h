@@ -2,6 +2,11 @@
 #include "insert_and_split.h"
 
 namespace rectpack2D {
+	enum class flipping_option {
+		DISABLED,
+		ENABLED
+	};
+
 	class default_empty_spaces;
 
 	template <bool allow_flip, class empty_spaces_provider = default_empty_spaces>
@@ -21,6 +26,8 @@ namespace rectpack2D {
 
 	public:
 		using output_rect_type = std::conditional_t<allow_flip, rect_xywhf, rect_xywh>;
+
+		flipping_option flipping_mode = flipping_option::ENABLED;
 
 		empty_spaces(const rect_wh& r) {
 			reset(r);
@@ -89,34 +96,41 @@ namespace rectpack2D {
 					}
 				}
 				else {
-					const auto normal = try_to_insert(image_rectangle);
-					const auto flipped = try_to_insert(rect_wh(image_rectangle).flip());
+					if (flipping_mode == flipping_option::ENABLED) {
+						const auto normal = try_to_insert(image_rectangle);
+						const auto flipped = try_to_insert(rect_wh(image_rectangle).flip());
 
-					/* 
-						If both were successful, 
-						prefer the one that generated less remainder spaces.
-					*/
-
-					if (normal && flipped) {
 						/* 
-							To prefer normal placements instead of flipped ones,
-							better_than will return true only if the flipped one generated
-						   	*strictly* less space remainders.
+							If both were successful, 
+							prefer the one that generated less remainder spaces.
 						*/
 
-						if (flipped.better_than(normal)) {
-							return accept_result(flipped, true);
+						if (normal && flipped) {
+							/* 
+								To prefer normal placements instead of flipped ones,
+								better_than will return true only if the flipped one generated
+								*strictly* less space remainders.
+							*/
+
+							if (flipped.better_than(normal)) {
+								return accept_result(flipped, true);
+							}
+
+							return accept_result(normal, false);
 						}
 
-						return accept_result(normal, false);
-					}
+						if (normal) {
+							return accept_result(normal, false);
+						}
 
-					if (normal) {
-						return accept_result(normal, false);
+						if (flipped) {
+							return accept_result(flipped, true);
+						}
 					}
-
-					if (flipped) {
-						return accept_result(flipped, true);
+					else {
+						if (const auto normal = try_to_insert(image_rectangle)) {
+							return accept_result(normal, false);
+						}
 					}
 				}
 			}

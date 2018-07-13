@@ -21,6 +21,7 @@ namespace rectpack2D {
 		const int discard_step;
 		F handle_successful_insertion;
 		G handle_unsuccessful_insertion;
+		const flipping_option flipping_mode;
 	};
 
 	template <class F, class G>
@@ -28,10 +29,15 @@ namespace rectpack2D {
 		const int max_bin_side,
 		const int discard_step,
 		F&& handle_successful_insertion,
-		G&& handle_unsuccessful_insertion
+		G&& handle_unsuccessful_insertion,
+		const flipping_option flipping_mode
 	) {
 		return finder_input<F, G> { 
-			max_bin_side, discard_step, std::forward<F>(handle_successful_insertion), std::forward<G>(handle_unsuccessful_insertion)
+			max_bin_side, 
+			discard_step, 
+			std::forward<F>(handle_successful_insertion),
+			std::forward<G>(handle_unsuccessful_insertion),
+			flipping_mode
 		};
 	};
 
@@ -110,7 +116,7 @@ namespace rectpack2D {
 
 	/*
 		Finds the best packing for the rectangles.
-		Provides a list of several sensible predicates.
+		Provides a list of several sensible comparison predicates.
 	*/
 
 	template <class empty_spaces_type, class F, class G>
