@@ -7,6 +7,7 @@ using namespace rectpack2D;
 
 int main() {
 	constexpr bool allow_flip = true;
+	const auto runtime_flipping_mode = flipping_option::ENABLED;
 
 	/* 
 		Here, we choose the "empty_spaces" class that the algorithm will use from now on. 
@@ -99,7 +100,8 @@ int main() {
 				max_side,
 				discard_step,
 				report_successful,
-				report_unsuccessful
+				report_unsuccessful,
+				runtime_flipping_mode
 			)
 		);
 
@@ -125,7 +127,8 @@ int main() {
 				max_side,
 				discard_step,
 				report_successful,
-				report_unsuccessful
+				report_unsuccessful,
+				runtime_flipping_mode
 			),
 
 			my_custom_order_1,
@@ -144,7 +147,8 @@ int main() {
 				max_side,
 				discard_step,
 				report_successful,
-				report_unsuccessful
+				report_unsuccessful,
+				runtime_flipping_mode
 			)
 		);
 
@@ -155,6 +159,7 @@ int main() {
 		/* Example 4: Manually perform insertions. This way you can try your own best-bin finding logic. */
 
 		auto packing_root = spaces_type({ max_side, max_side });
+		packing_root.flipping_mode = runtime_flipping_mode;
 
 		for (auto& r : rectangles) {
 			if (const auto inserted_rectangle = packing_root.insert(std::as_const(r).get_wh())) {
