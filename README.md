@@ -8,7 +8,9 @@ If you are looking for the old version of rectpack2D, it can still be found in [
 Rectangle packing library (no longer tiny!).  
 This is a refactored and **highly optimized** branch of the original library which is easier to use and customize.  
 
-## Example results
+![7](https://user-images.githubusercontent.com/3588717/42707552-d8b1c65e-86da-11e8-9412-54c580bd2696.jpg)
+
+## Benchmarks
 
 Tests were conducted on a ``Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz``.  
 The binary was built with ``clang 6.0.0``, using an -03 switch.
