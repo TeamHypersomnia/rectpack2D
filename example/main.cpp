@@ -38,13 +38,11 @@ int main() {
 	*/
 
 	auto report_successful = [](rect_type&) {
-		/* Continue */
-		return true;
+		return callback_result::CONTINUE_PACKING;
 	};
 
 	auto report_unsuccessful = [](rect_type&) {
-		/* Abort */
-		return false;
+		return callback_result::ABORT_PACKING;
 	};
 
 	/*

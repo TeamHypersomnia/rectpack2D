@@ -4,6 +4,11 @@
 #include "rect_structs.h"
 
 namespace rectpack2D {
+	enum class callback_result {
+		ABORT_PACKING,
+		CONTINUE_PACKING
+	};
+
 	template <class T>
 	auto& dereference(T& r) {
 		/* 
@@ -242,12 +247,12 @@ namespace rectpack2D {
 				if (const auto ret = root.insert(rect.get_wh())) {
 					rect = *ret;
 
-					if (!input.handle_successful_insertion(rect)) {
+					if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
 						break;
 					}
 				}
 				else {
-					if (!input.handle_unsuccessful_insertion(rect)) {
+					if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
 						break;
 					}
 				}
