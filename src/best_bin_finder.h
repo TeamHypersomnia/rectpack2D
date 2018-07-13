@@ -21,15 +21,16 @@ namespace rectpack2D {
 
 	/*
 		This function will do a binary search on viable bin sizes,
-		starting from starting_bin.
+		starting from the biggest one: starting_bin.
 
 		The search stops when the bin was successfully inserted into,
-		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
+		AND the bin size to be tried next differs in size from the last viable one by *less* then discard_step.
 
-		If the search fails, that is, we could not fit into even the starting rect,
-		we return the amount of space inserted in total.
+		If we could not insert all input rectangles into a bin even as big as the starting_bin - the search fails.
+		In this case, we return the amount of space (total_area_type) inserted in total.
 
-		If the search succeeds, that is, we've found a better viable bin, we return it.
+		If we've found a viable bin that is smaller or equal to starting_bin, the search succeeds.
+		In this case, we return the viable bin (rect_wh).
 	*/
 
 	template <class empty_spaces_type, class O>
@@ -126,7 +127,6 @@ namespace rectpack2D {
 						return total_inserted_area;
 					}
 				}
-
 			}
 		}
 	}
