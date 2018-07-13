@@ -33,25 +33,31 @@ namespace rectpack2D {
 		In this case, we return the viable bin (rect_wh).
 	*/
 
+	enum class bin_dimension {
+		BOTH,
+		WIDTH,
+		HEIGHT
+	};
+
 	template <class empty_spaces_type, class O>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		empty_spaces_type& root,
 		O ordering,
 		const rect_wh starting_bin,
 		const int discard_step,
-		const int which_dimension
+		const bin_dimension tried_dimension
 	) {
 		auto candidate_bin = starting_bin;
 
 		int starting_step = 0;
 
-		if (which_dimension == 0) {
+		if (tried_dimension == bin_dimension::BOTH) {
 			starting_step = starting_bin.w / 2;
 
 			candidate_bin.w /= 2;
 			candidate_bin.h /= 2;
 		}
-		else if (which_dimension == 1) {
+		else if (tried_dimension == bin_dimension::WIDTH) {
 			starting_step = starting_bin.w / 2;
 
 			candidate_bin.w /= 2;
@@ -89,11 +95,11 @@ namespace rectpack2D {
 					return candidate_bin;
 				}
 
-				if (which_dimension == 0) {
+				if (tried_dimension == bin_dimension::BOTH) {
 					candidate_bin.w -= step;
 					candidate_bin.h -= step;
 				}
-				else if (which_dimension == 1) {
+				else if (tried_dimension == bin_dimension::WIDTH) {
 					candidate_bin.w -= step;
 				}
 				else {
@@ -105,7 +111,7 @@ namespace rectpack2D {
 			else {
 				/* Attempt ended with failure. Try with a bigger bin. */
 
-				if (which_dimension == 0) {
+				if (tried_dimension == bin_dimension::BOTH) {
 					candidate_bin.w += step;
 					candidate_bin.h += step;
 
@@ -113,7 +119,7 @@ namespace rectpack2D {
 						return total_inserted_area;
 					}
 				}
-				else if (which_dimension == 1) {
+				else if (tried_dimension == bin_dimension::WIDTH) {
 					candidate_bin.w += step;
 
 					if (candidate_bin.w > starting_bin.w) {
@@ -138,11 +144,20 @@ namespace rectpack2D {
 		const rect_wh starting_bin,
 		const int discard_step
 	) {
-		const auto try_pack = [&](const int i, const rect_wh from_bin) {
-			return best_packing_for_ordering_impl(root, std::forward<O>(ordering), from_bin, discard_step, i);
+		const auto try_pack = [&](
+			const bin_dimension tried_dimension, 
+			const rect_wh starting_bin
+		) {
+			return best_packing_for_ordering_impl(
+				root,
+				std::forward<O>(ordering),
+				starting_bin,
+				discard_step,
+				tried_dimension
+			);
 		};
 
-		const auto best_result = try_pack(0, starting_bin);
+		const auto best_result = try_pack(bin_dimension::BOTH, starting_bin);
 
 		if (const auto failed = std::get_if<total_area_type>(&best_result)) {
 			return *failed;
@@ -150,13 +165,16 @@ namespace rectpack2D {
 
 		auto best_bin = std::get<rect_wh>(best_result);
 
-		for (int i = 1; i < 3; ++i) {
-			const auto trial = try_pack(i, best_bin);
+		auto trial = [&](const bin_dimension tried_dimension) {
+			const auto trial = try_pack(tried_dimension, best_bin);
 
 			if (const auto better = std::get_if<rect_wh>(&trial)) {
 				best_bin = *better;
 			}
-		}
+		};
+
+		trial(bin_dimension::WIDTH);
+		trial(bin_dimension::HEIGHT);
 
 		return best_bin;
 	}
