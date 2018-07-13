@@ -5,6 +5,17 @@ If you are looking for the old version of rectpack2D, it can still be found in [
 [![Build Status](https://travis-ci.org/TeamHypersomnia/rectpack2D.svg?branch=master)](https://travis-ci.org/TeamHypersomnia/rectpack2D)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/aojyt3r6ysvadkgl?svg=true)](https://ci.appveyor.com/project/geneotech/rectpack2D)
 
+Table of contents:
+
+- [Benchmarks](#benchmarks)
+- [Usage](#usage)
+- [Building the example](#building-the-example)
+  * [Windows](#windows)
+  * [Linux](#linux)
+- [Algorithm](#algorithm)
+  * [Insertion algorithm](#insertion-algorithm)
+  * [Further heuristics](#further-heuristics)
+
 Rectangle packing library (no longer tiny!).  
 This is a refactored and **highly optimized** branch of the original library which is easier to use and customize.  
 
