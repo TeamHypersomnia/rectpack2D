@@ -6,6 +6,7 @@ namespace rectpack2D {
 	struct created_splits {
 		int count = 0;
 		std::array<space_rect, 2> spaces;
+		int lesser_free_dimension = 0;
 
 		static auto failed() {
 			created_splits result;
@@ -17,12 +18,24 @@ namespace rectpack2D {
 			return created_splits();
 		}
 
-		template <class... Args>
-		created_splits(Args&&... args) : spaces({ std::forward<Args>(args)... }) {
-			count = sizeof...(Args);
-		}
+		created_splits() = default;
+
+		created_splits(const space_rect single) : count(1), spaces({ single }) {}
+		created_splits(
+			const space_rect first,
+			const space_rect second,
+			const int lesser_free_dimension
+		) : 
+			count(2),
+			spaces({ first, second }),
+			lesser_free_dimension(lesser_free_dimension)
+		{}
 
 		bool better_than(const created_splits& b) const {
+			if (count == b.count) {
+				return lesser_free_dimension < b.lesser_free_dimension;
+			}
+
 			return count < b.count;
 		}
 
@@ -113,7 +126,7 @@ namespace rectpack2D {
 				free_h
 			);
 
-			return created_splits(bigger_split, lesser_split);
+			return created_splits(bigger_split, lesser_split, free_h);
 		}
 
 		const auto bigger_split = space_rect(
@@ -130,6 +143,6 @@ namespace rectpack2D {
 			im.h
 		);
 
-		return created_splits(bigger_split, lesser_split);
+		return created_splits(bigger_split, lesser_split, free_w);
 	}
 }
