@@ -106,13 +106,9 @@ namespace rectpack2D {
 						*/
 
 						if (normal && flipped) {
-							/* 
-								To prefer normal placements instead of flipped ones,
-								better_than will return true only if the flipped one generated
-								*strictly* less space remainders.
-							*/
-
 							if (flipped.better_than(normal)) {
+								/* Accept the flipped result if it producues less or "better" spaces. */
+
 								return accept_result(flipped, true);
 							}
 
