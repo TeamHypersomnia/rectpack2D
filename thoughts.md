@@ -4,6 +4,8 @@
 - Rect difficulty = 1 / rect feasibility
 - Space feasibility = number of remaining input rectangles that fit into the space
 	- How to break ties for huge, initial spaces?
+		- How much one can insert until current rects AABB is expanded.
+			- The more one can insert, the more feasible the space is.
 		- In practice, will there be many ties?
 			- There shouldn't be many not be if the max_size is carefully chosen
 		- Determine difficulty recursively?
