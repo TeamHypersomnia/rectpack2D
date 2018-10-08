@@ -14,7 +14,7 @@ Table of contents:
   * [Linux](#linux)
 - [Algorithm](#algorithm)
   * [Insertion algorithm](#insertion-algorithm)
-  * [Further heuristics](#further-heuristics)
+  * [Additional heuristics](#additional-heuristics)
 
 Rectangle packing library (no longer tiny!).  
 This is a refactored and **highly optimized** branch of the original library which is easier to use and customize.  
@@ -182,12 +182,11 @@ To see the complete, modular procedure for calculating the splits (along with th
 
 If the insertion fails, we also try the same procedure for a flipped image.
 
-### Further heuristics
+### Additional heuristics
 
-Now we know how to insert individual images into a bin of a given initial size.
-Two problems remain unsolved:
+Now we know how to insert individual images into a bin of a given initial size S.
 
-- What initial size should be passed to the algorithm so that the rectangles end up wasting the least amount of space?
+1. However, what S should be passed to the algorithm so that the rectangles end up wasting the least amount of space?
 	- We perform a binary search.
 		- We start with the size specified by the library user. Typically, it would be the maximum texture size allowed on a particular GPU.
 		- If the packing was successful on the given bin size, decrease the size and try to pack again.
@@ -198,7 +197,7 @@ Two problems remain unsolved:
 		- Then we do the same, but only decreasing width.
 		- Then we do the same, but only decreasing height.
 		- The last two were a breakthrough in packing tightness. It turns out important to consider non-square bins.
-- In what order should the rectangles be inserted so that they pack the tightest?
+2. In what order should the rectangles be inserted so that they pack the tightest?
 	- By default, the library tries 6 decreasing orders:
 		- By area.
 		- By perimeter.
