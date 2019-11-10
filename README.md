@@ -18,6 +18,7 @@ Table of contents:
 
 Rectangle packing library (no longer tiny!).  
 This is a refactored and **highly optimized** branch of the original library which is easier to use and customize.  
+It was originally developed for the needs of [Hypersomnia](https://github.com/TeamHypersomnia/Hypersomnia), a free and open-source multiplayer shooter.
 
 ![7](https://user-images.githubusercontent.com/3588717/42707552-d8b1c65e-86da-11e8-9412-54c580bd2696.jpg)
 
