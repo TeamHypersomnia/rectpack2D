@@ -57,10 +57,23 @@ int main() {
 		The search stops when the bin was successfully inserted into,
 		AND the next candidate bin size differs from the last successful one by *less* then discard_step.
 
+		The best possible granuarity is achieved with discard_step = 1.
+		If you pass a negative discard_step, the algoritm will search with even more granularity -
+		E.g. with discard_step = -4, the algoritm will behave as if you passed discard_step = 1,
+		but it will make as many as 4 attempts to optimize bins down to the single pixel.
+
+		Since discard_step = 0 does not make sense, the algoritm will automatically treat this case 
+		as if it were passed a discard_step = 1.
+
+		For common applications, a discard_step = 1 or even discard_step = 128
+		should yield really good packings while being very performant.
+		If you are dealing with very small rectangles specifically,
+		it might be a good idea to make this value negative.
+
 		See the algorithm section of README for more information.
 	*/
 
-	const auto discard_step = 1;
+	const auto discard_step = -4;
 
 	/* 
 		Create some arbitrary rectangles.
