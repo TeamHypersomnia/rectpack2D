@@ -100,8 +100,10 @@ namespace rectpack2D {
 
 		std::size_t f = 0;
 
-		auto make_order = [&f](auto& predicate) {
-			std::sort(orders[f].begin(), orders[f].end(), predicate);
+		auto& orders_ref = orders;
+
+		auto make_order = [&f, &orders_ref](auto& predicate) {
+			std::sort(orders_ref[f].begin(), orders_ref[f].end(), predicate);
 			++f;
 		};
 
@@ -109,7 +111,7 @@ namespace rectpack2D {
 		(make_order(comparators), ...);
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[](auto callback){ for (auto& o : orders) { callback(o); } },
+			[&orders_ref](auto callback){ for (auto& o : orders_ref) { callback(o); } },
 			input
 		);
 	}
