@@ -1,11 +1,28 @@
-If you are looking for the old version of rectpack2D, it can still be found in [a legacy branch](https://github.com/TeamHypersomnia/rectpack2D/tree/legacy).
-
+<div align="center">
+	
+	
 # rectpack2D
 
 [![Build Status](https://travis-ci.org/TeamHypersomnia/rectpack2D.svg?branch=master)](https://travis-ci.org/TeamHypersomnia/rectpack2D)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/aojyt3r6ysvadkgl?svg=true)](https://ci.appveyor.com/project/geneotech/rectpack2D)
 
-Table of contents:
+	
+	
+**Used in [Assassin's Creed: Valhalla](https://www.youtube.com/watch?v=2KnjDL4DnwM&t=2382s)!**
+	
+[2 scientific references](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=teamhypersomnia&btnG=)
+	
+	
+</div>
+
+A header-only 2D rectangle packing library written in modern C++.  
+This is a refactored and **highly optimized** version of the [original library](https://github.com/TeamHypersomnia/rectpack2D/tree/legacy).
+
+It was originally developed for the needs of [Hypersomnia](https://github.com/TeamHypersomnia/Hypersomnia), a free and open-source multiplayer shooter.
+
+![7](https://user-images.githubusercontent.com/3588717/42707552-d8b1c65e-86da-11e8-9412-54c580bd2696.jpg)
+
+## Table of contents
 
 - [Benchmarks](#benchmarks)
 - [Usage](#usage)
@@ -15,12 +32,6 @@ Table of contents:
 - [Algorithm](#algorithm)
   * [Insertion algorithm](#insertion-algorithm)
   * [Additional heuristics](#additional-heuristics)
-
-Rectangle packing library (no longer tiny!).  
-This is a refactored and **highly optimized** branch of the original library which is easier to use and customize.  
-It was originally developed for the needs of [Hypersomnia](https://github.com/TeamHypersomnia/Hypersomnia), a free and open-source multiplayer shooter.
-
-![7](https://user-images.githubusercontent.com/3588717/42707552-d8b1c65e-86da-11e8-9412-54c580bd2696.jpg)
 
 ## Benchmarks
 
