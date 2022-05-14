@@ -3,7 +3,7 @@ branches:
   only:
     - master
 
-image: Visual Studio 2017 Preview
+image: Visual Studio 2022
 configuration: Release
 build:
   parallel: true                  # enable MSBuild parallel builds
