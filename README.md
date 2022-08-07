@@ -9,8 +9,10 @@
 	
 	
 **Used in [Assassin's Creed: Valhalla](https://www.youtube.com/watch?v=2KnjDL4DnwM&t=2382s)!**
+
+**Used by [Skydio](https://pages.skydio.com/rs/784-TUF-591/images/Open%20Source%20Software%20Notice%20v0.2.html), one of the top drone manufacturers!**
 	
-[2 scientific references](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=teamhypersomnia&btnG=)
+**[2 scientific references](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=teamhypersomnia&btnG=)!**
 	
 	
 </div>
