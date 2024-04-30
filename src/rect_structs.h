@@ -27,10 +27,6 @@ namespace rectpack2D {
 		int	area() const { return w * h; }
 	   	int perimeter() const { return 2 * w + 2 * h; }
 
-		float pathological_mult() const {
-			return float(max_side()) / min_side() * area();
-		}
-
 		template <class R>
 		void expand_with(const R& r) {
 			w = std::max(w, r.x + r.w);

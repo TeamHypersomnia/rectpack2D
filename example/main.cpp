@@ -127,11 +127,11 @@ int main() {
 		using rect_ptr = rect_type*;
 
 		auto my_custom_order_1 = [](const rect_ptr a, const rect_ptr b) {
-			return a->get_wh().pathological_mult() > b->get_wh().pathological_mult();
+			return a->get_wh().area() > b->get_wh().area();
 		};
 
 		auto my_custom_order_2 = [](const rect_ptr a, const rect_ptr b) {
-			return a->get_wh().pathological_mult() < b->get_wh().pathological_mult();
+			return a->get_wh().perimeter() < b->get_wh().perimeter();
 		};
 
 		const auto result_size = find_best_packing<spaces_type>(

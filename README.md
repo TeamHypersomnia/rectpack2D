@@ -218,5 +218,3 @@ Now we know how to insert individual images into a bin of a given initial size S
 		- By the bigger side.
 		- By width.
 		- By height.
-		- By 'a pathological multiplier": ``max(w, h) / min(w, h) * w * h``
-			- This makes some giant, irregular mutants always go first, which is good, because it doesn't shred our empty spaces to a lot of useless pieces.

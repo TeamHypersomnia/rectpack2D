@@ -146,9 +146,6 @@ namespace rectpack2D {
 			},
 			[](const rect_type* const a, const rect_type* const b) {
 				return a->h > b->h;
-			},
-			[](const rect_type* const a, const rect_type* const b) {
-				return a->get_wh().pathological_mult() > b->get_wh().pathological_mult();
 			}
 		);
 	}
