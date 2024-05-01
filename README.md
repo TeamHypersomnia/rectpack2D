@@ -212,7 +212,7 @@ Now we know how to insert individual images into a bin of a given initial size S
 		- Then we do the same, but only decreasing height.
 		- The last two were a breakthrough in packing tightness. It turns out important to consider non-square bins.
 2. In what order should the rectangles be inserted so that they pack the tightest?
-	- By default, the library tries 6 decreasing orders:
+	- By default, the library tries 5 decreasing orders:
 		- By area.
 		- By perimeter.
 		- By the bigger side.
