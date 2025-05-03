@@ -3,10 +3,7 @@
 	
 # rectpack2D
 
-[![Build Status](https://travis-ci.org/TeamHypersomnia/rectpack2D.svg?branch=master)](https://travis-ci.org/TeamHypersomnia/rectpack2D)
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/aojyt3r6ysvadkgl?svg=true)](https://ci.appveyor.com/project/geneotech/rectpack2D)
-
-	
+[![Linux & Windows Build](https://github.com/TeamHypersomnia/rectpack2D/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/TeamHypersomnia/rectpack2D/actions/workflows/cmake-multi-platform.yml)
 	
 **Used in [Assassin's Creed: Valhalla](https://www.youtube.com/watch?v=2KnjDL4DnwM&t=2382s)!**
 
