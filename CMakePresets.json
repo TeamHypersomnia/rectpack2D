@@ -1,0 +1,62 @@
+{
+    "version": 4,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20
+    },
+    "configurePresets": [
+        {
+            "name": "linux_binary_env",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables" : {
+                "RECTPACK2D_BUILD_EXAMPLE" : true
+            }
+        },
+        {
+            "name": "windows_binary_env",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "generator": "Visual Studio",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables" : {
+                "RECTPACK2D_BUILD_EXAMPLE" : true
+            }
+        },
+        {
+            "inherits": [ "linux_binary_env" ],
+            "name" : "linux"
+        },
+        {
+            "inherits": [ "windows_binary_env" ],
+            "name" : "windows"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux",
+            "configuration": "Debug"
+        },
+        {
+            "name": "linux-release",
+            "configurePreset": "linux",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-debug",
+            "configurePreset": "windows",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-release",
+            "configurePreset": "windows",
+            "configuration": "Release"
+        }
+    ]
+}
