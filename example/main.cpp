@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../src/finders_interface.h"
+#include <rectpack2D/finders_interface.h>
 
 /* For description of the algorithm, please see the README.md */
 

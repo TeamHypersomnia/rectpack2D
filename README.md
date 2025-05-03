@@ -192,7 +192,7 @@ which will make better use of empty spaces overall.
 	- we delete the space and create a single split. In this case a 10x40 space.
 
 To see the complete, modular procedure for calculating the splits (along with the corner cases),
-[see this source](src/insert_and_split.h).
+[see this source](src/rectpack2D/insert_and_split.h).
 
 If the insertion fails, we also try the same procedure for a flipped image.
 
