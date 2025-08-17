@@ -116,7 +116,7 @@ int main() {
 	std::vector<my_rect> rectangles;
 
 	/*
-		The example will compile just fine if you any of these instead:
+		The example will compile just fine if you use any of these instead:
 
 		std::vector<rect_type> rectangles;
 		std::list<rect_type> rectangles;
