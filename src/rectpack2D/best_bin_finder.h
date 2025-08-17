@@ -89,7 +89,7 @@ namespace rectpack2D {
 
 			const bool all_inserted = [&]() {
 				for (const auto& r : ordering) {
-					const auto& rect = dereference(r);
+					const auto& rect = dereference(r).get_rect();
 
 					if (root.insert(rect.get_wh())) {
 						total_inserted_area += rect.area();
@@ -264,7 +264,7 @@ namespace rectpack2D {
 			root.reset(best_bin);
 
 			for (auto& rr : *best_order) {
-				auto& rect = dereference(rr);
+				auto& rect = dereference(rr).get_rect();
 
 				if (const auto ret = root.insert(rect.get_wh())) {
 					rect = *ret;

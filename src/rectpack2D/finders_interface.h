@@ -46,9 +46,9 @@ namespace rectpack2D {
 		just in the order that they were passed.
 	*/
 
-	template <class empty_spaces_type, class F, class G>
+	template <class empty_spaces_type, class Subjects, class F, class G>
 	rect_wh find_best_packing_dont_sort(
-		std::vector<output_rect_t<empty_spaces_type>>& subjects,
+		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
 		using order_type = std::remove_reference_t<decltype(subjects)>;
@@ -68,9 +68,9 @@ namespace rectpack2D {
 		and will only write the x, y coordinates of the best packing found among the orders.
 	*/
 
-	template <class empty_spaces_type, class F, class G, class Comparator, class... Comparators>
+	template <class empty_spaces_type, class Subjects, class F, class G, class Comparator, class... Comparators>
 	rect_wh find_best_packing(
-		std::vector<output_rect_t<empty_spaces_type>>& subjects,
+		Subjects& subjects,
 		const finder_input<F, G>& input,
 
 		Comparator comparator,
@@ -88,8 +88,10 @@ namespace rectpack2D {
 			initial_pointers.clear();
 
 			for (auto& s : subjects) {
-				if (s.area() > 0) {
-					initial_pointers.emplace_back(std::addressof(s));
+				auto& r = s.get_rect();
+
+				if (r.area() > 0) {
+					initial_pointers.emplace_back(std::addressof(r));
 				}
 			}
 
@@ -121,9 +123,9 @@ namespace rectpack2D {
 		Provides a list of several sensible comparison predicates.
 	*/
 
-	template <class empty_spaces_type, class F, class G>
+	template <class empty_spaces_type, class Subjects, class F, class G>
 	rect_wh find_best_packing(
-		std::vector<output_rect_t<empty_spaces_type>>& subjects,
+		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <list>
 #include <rectpack2D/finders_interface.h>
 
 /* For description of the algorithm, please see the README.md */
@@ -75,13 +76,56 @@ int main() {
 
 	const auto discard_step = -4;
 
+	/*
+		Your custom class holding the rectangle.
+
+		If you do not need any data associated with the rectangles,
+		you are free to ignore this class and just use an std::vector<rect_type>.
+	*/
+
+	class my_rect {
+		rect_type rect;
+		int some_medadata = 0;
+
+	public:
+		my_rect(const rect_type& rect) : rect(rect) { (void)some_medadata; }
+
+		/*
+			You need to provide these two member getters.
+
+			The algorithm has to extract the actual rectangles
+			from your custom class. They will be modified in-place.
+
+		*/
+
+		auto& get_rect() {
+			return rect;
+		}
+
+		const auto& get_rect() const {
+			return rect;
+		}
+	};
+
 	/* 
 		Create some arbitrary rectangles.
 		Every subsequent call to the packer library will only read the widths and heights that we now specify,
 		and always overwrite the x and y coordinates with calculated results.
 	*/
 
-	std::vector<rect_type> rectangles;
+	std::vector<my_rect> rectangles;
+
+	/*
+		The example will compile just fine if you any of these instead:
+
+		std::vector<rect_type> rectangles;
+		std::list<rect_type> rectangles;
+
+		std::list<my_rect> rectangles;
+
+		1. The container just needs to be forward-iterable with .begin() and .end().
+		2. The element type just needs to have get_rect() member functions defined (const and non-const).
+	*/
 
 	rectangles.emplace_back(rect_xywh(0, 0, 20, 40));
 	rectangles.emplace_back(rect_xywh(0, 0, 120, 40));
@@ -92,7 +136,8 @@ int main() {
 	auto report_result = [&rectangles](const rect_wh& result_size) {
 		std::cout << "Resultant bin: " << result_size.w << " " << result_size.h << std::endl;
 
-		for (const auto& r : rectangles) {
+		for (const auto& rect : rectangles) {
+			const auto& r = rect.get_rect();
 			std::cout << r.x << " " << r.y << " " << r.w << " " << r.h << std::endl;
 		}
 	};
@@ -175,7 +220,7 @@ int main() {
 		packing_root.flipping_mode = runtime_flipping_mode;
 
 		for (auto& r : rectangles) {
-			if (const auto inserted_rectangle = packing_root.insert(std::as_const(r).get_wh())) {
+			if (const auto inserted_rectangle = packing_root.insert(std::as_const(r.get_rect()).get_wh())) {
 				r = *inserted_rectangle;
 			}
 			else {

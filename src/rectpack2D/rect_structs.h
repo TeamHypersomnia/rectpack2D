@@ -49,6 +49,14 @@ namespace rectpack2D {
 		auto get_wh() const {
 			return rect_wh(w, h);
 		}
+
+		auto& get_rect() {
+			return *this;
+		}
+
+		const auto& get_rect() const {
+			return *this;
+		}
 	};
 
 	struct rect_xywhf {
@@ -67,6 +75,14 @@ namespace rectpack2D {
 
 		auto get_wh() const {
 			return rect_wh(w, h);
+		}
+
+		auto& get_rect() {
+			return *this;
+		}
+
+		const auto& get_rect() const {
+			return *this;
 		}
 	};
 
