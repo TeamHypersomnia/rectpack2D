@@ -90,7 +90,7 @@ namespace rectpack2D {
 
 			const bool all_inserted = [&]() {
 				for (const auto& r : ordering) {
-                    auto& rect = dereference(r).get_rect();
+                    const auto& rect = dereference(r).get_rect();
 
 					if (root.insert(rect.get_wh())) {
 						total_inserted_area += rect.area();
