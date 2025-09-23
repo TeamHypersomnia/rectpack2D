@@ -87,8 +87,7 @@ namespace rectpack2D {
             }
         );
 
-		thread_local std::vector<rect_type*> orders;
-        orders.resize(count_orders * count_subjects);
+		std::vector<rect_type*> orders(count_orders * count_subjects);
 
         for (std::size_t i = 0; i < count_subjects; ++i) {
             auto& r = subjects[i].get_rect();
