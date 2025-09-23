@@ -51,9 +51,9 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		using order_type = std::remove_reference_t<decltype(subjects)>;
+		using element_type = std::remove_reference_t<decltype(subjects[0])>;
 
-		return find_best_packing_impl<empty_spaces_type, order_type>(
+		return find_best_packing_impl<empty_spaces_type, element_type>(
 			[&subjects](auto callback) { callback(subjects); },
 			input
 		);
@@ -77,43 +77,59 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
-		using order_type = std::vector<rect_type*>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
-		thread_local std::array<order_type, count_orders> orders;
+        const std::size_t count_subjects = std::count_if(
+            std::begin(subjects),
+            std::end(subjects),
+            [](const auto& sub) {
+                return sub.get_rect().area() != 0;
+            }
+        );
+		thread_local std::vector<rect_type*> orders(count_orders * count_subjects);
 
-		{
-			/* order[0] will always exist since this overload requires at least one comparator */
-			auto& initial_pointers = orders[0];
-			initial_pointers.clear();
+        for (std::size_t i = 0; i < count_subjects; ++i) {
+            auto& r = subjects[i].get_rect();
 
-			for (auto& s : subjects) {
-				auto& r = s.get_rect();
+            if (r.area() == 0) {
+                continue;
+            }
 
-				if (r.area() > 0) {
-					initial_pointers.emplace_back(std::addressof(r));
-				}
-			}
+            orders[i] = std::addressof(r);
+        }
 
-			for (std::size_t i = 1; i < count_orders; ++i) {
-				orders[i] = initial_pointers;
-			}
-		}
+        std::transform(
+            std::begin(subjects),
+            std::end(subjects),
+            orders.begin(),
+            [](auto& sub) { return &sub.get_rect(); }
+        );
+
+        for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
+            std::copy(orders.begin(), orders.begin() + count_subjects, it);
+        }
 
 		std::size_t f = 0;
+        auto& orders_ref = orders;
 
-		auto& orders_ref = orders;
-
-		auto make_order = [&f, &orders_ref](auto& predicate) {
-			std::sort(orders_ref[f].begin(), orders_ref[f].end(), predicate);
+		auto make_order = [&f, &orders_ref, &count_subjects](auto& predicate) {
+			std::sort(
+                orders_ref.begin() + (f * count_subjects),
+                orders_ref.begin() + ((f + 1) * count_subjects),
+                predicate
+            );
 			++f;
 		};
 
 		make_order(comparator);
 		(make_order(comparators), ...);
 
-		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&orders_ref](auto callback){ for (auto& o : orders_ref) { callback(o); } },
+		return find_best_packing_impl<empty_spaces_type, rect_type*>(
+			[count_subjects, &orders_ref](auto callback) {
+                for (auto it = orders_ref.begin(); it != orders_ref.end(); it += count_subjects) {
+                    callback(std::span<rect_type*>(it, it + count_subjects));
+                }
+            },
 			input
 		);
 	}
