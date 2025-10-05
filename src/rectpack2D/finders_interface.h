@@ -77,7 +77,6 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
-		using element_type = std::remove_reference_t<decltype(*std::begin(subjects))>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
 		std::size_t count_subjects = 0;
