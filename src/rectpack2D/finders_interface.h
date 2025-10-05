@@ -79,36 +79,24 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
-		const std::size_t count_subjects = std::count_if(
-			std::begin(subjects),
-			std::end(subjects),
-			[](const auto& sub) {
-				return sub.get_rect().area() != 0;
-			}
-		);
+        std::size_t count_subjects = 0;
 
-		std::vector<rect_type*> orders(count_orders * count_subjects);
+		// Allocate space assuming no rectangle has an area of zero.
+		std::vector<rect_type*> orders(count_orders * std::size(subjects));
 
-		for (std::size_t i = 0; i < count_subjects; ++i) {
-			auto& r = subjects[i].get_rect();
+        for (auto& s : subjects) {
+            auto& r = s.get_rect();
 
 			if (r.area() == 0) {
 				continue;
 			}
 
-			orders[i] = std::addressof(r);
-		}
+            orders[count_subjects++] = std::addressof(r);
+        }
 
-		std::transform(
-			std::begin(subjects),
-			std::end(subjects),
-			orders.begin(),
-			[](auto& sub) { return &sub.get_rect(); }
-		);
-
-		for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
-			std::copy(orders.begin(), orders.begin() + count_subjects, it);
-		}
+        for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
+            std::copy(orders.begin(), orders.begin() + count_subjects, it);
+        }
 
 		std::size_t f = 0;
 		auto& orders_ref = orders;
