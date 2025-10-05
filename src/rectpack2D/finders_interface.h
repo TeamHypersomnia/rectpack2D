@@ -79,24 +79,24 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
-        std::size_t count_subjects = 0;
+		std::size_t count_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
 		std::vector<rect_type*> orders(count_orders * std::size(subjects));
 
-        for (auto& s : subjects) {
-            auto& r = s.get_rect();
+		for (auto& s : subjects) {
+			auto& r = s.get_rect();
 
 			if (r.area() == 0) {
 				continue;
 			}
 
-            orders[count_subjects++] = std::addressof(r);
-        }
+			orders[count_subjects++] = std::addressof(r);
+		}
 
-        for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
-            std::copy(orders.begin(), orders.begin() + count_subjects, it);
-        }
+		for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
+			std::copy(orders.begin(), orders.begin() + count_subjects, it);
+		}
 
 		std::size_t f = 0;
 		auto& orders_ref = orders;
