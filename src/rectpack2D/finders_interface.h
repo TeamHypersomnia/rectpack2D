@@ -94,6 +94,10 @@ namespace rectpack2D {
 			orders[count_subjects++] = std::addressof(r);
 		}
 
+		if (count_subjects == 0) {
+			return {};
+		}
+
 		// Cut off any potentially unused pointers at the end.
 		orders.resize(count_orders * count_subjects);
 
