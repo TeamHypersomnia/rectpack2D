@@ -127,11 +127,11 @@ int main() {
 		2. The element type just needs to have get_rect() member functions defined (const and non-const).
 	*/
 
-	rectangles.emplace_back(rect_xywh(0, 0, 0, 40));
-	rectangles.emplace_back(rect_xywh(0, 0, 120, 0));
-	rectangles.emplace_back(rect_xywh(0, 0, 0, 59));
-	rectangles.emplace_back(rect_xywh(0, 0, 199, 0));
-	rectangles.emplace_back(rect_xywh(0, 0, 0, 0));
+	rectangles.emplace_back(rect_xywh(0, 0, 20, 40));
+	rectangles.emplace_back(rect_xywh(0, 0, 120, 40));
+	rectangles.emplace_back(rect_xywh(0, 0, 85, 59));
+	rectangles.emplace_back(rect_xywh(0, 0, 199, 380));
+	rectangles.emplace_back(rect_xywh(0, 0, 85, 875));
 	
 	auto report_result = [&rectangles](const rect_wh& result_size) {
 		std::cout << "Resultant bin: " << result_size.w << " " << result_size.h << std::endl;
