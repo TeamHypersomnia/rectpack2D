@@ -52,9 +52,10 @@ namespace rectpack2D {
 		const finder_input<F, G>& input
 	) {
 		using element_type = std::remove_reference_t<decltype(subjects[0])>;
+		using iterator_type = decltype(std::begin(subjects));
 
-		return find_best_packing_impl<empty_spaces_type, element_type>(
-			[&subjects](auto callback) { callback(subjects); },
+		return find_best_packing_impl<empty_spaces_type, iterator_type>(
+			[&subjects](auto callback) { callback(std::begin(subjects), std::end(subjects)); },
 			input
 		);
 	}
@@ -125,10 +126,11 @@ namespace rectpack2D {
 		make_order(comparator);
 		(make_order(comparators), ...);
 
-		return find_best_packing_impl<empty_spaces_type, rect_type*>(
+
+		return find_best_packing_impl<empty_spaces_type, decltype(std::begin(orders))>(
 			[count_subjects, &orders_ref](auto callback) {
                 for (auto it = orders_ref.begin(); it != orders_ref.end(); it += count_subjects) {
-                    callback(std::span<rect_type*>(it, it + count_subjects));
+                    callback(it, it + count_subjects);
                 }
             },
 			input
