@@ -51,7 +51,6 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		using element_type = std::remove_reference_t<decltype(subjects[0])>;
 		using iterator_type = decltype(std::begin(subjects));
 
 		return find_best_packing_impl<empty_spaces_type, iterator_type>(
