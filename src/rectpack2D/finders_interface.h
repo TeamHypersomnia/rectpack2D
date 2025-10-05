@@ -94,12 +94,12 @@ namespace rectpack2D {
 			orders[count_subjects++] = std::addressof(r);
 		}
 
+		// Cut off any potentially unused pointers at the end.
+		orders.resize(count_orders * count_subjects);
+
 		for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
 			std::copy(orders.begin(), orders.begin() + count_subjects, it);
 		}
-
-		// Cut off any potentially unused pointers at the end.
-		orders.resize(count_orders * count_subjects);
 
 		std::size_t f = 0;
 		auto& orders_ref = orders;
