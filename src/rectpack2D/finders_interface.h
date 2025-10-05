@@ -51,10 +51,10 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		using iterator_type = decltype(std::begin(subjects));
+		using element_type = std::remove_reference_t<decltype(*std::begin(subjects))>;
 
-		return find_best_packing_impl<empty_spaces_type, iterator_type>(
-			[&subjects](auto callback) { callback(std::begin(subjects), std::end(subjects)); },
+		return find_best_packing_impl<empty_spaces_type, element_type>(
+			[&subjects](auto callback) { callback(std::data(subjects), std::data(subjects) + std::size(subjects)); },
 			input
 		);
 	}
@@ -77,6 +77,7 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
+		using element_type = std::remove_reference_t<decltype(*std::begin(subjects))>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
 		std::size_t count_subjects = 0;
@@ -98,6 +99,9 @@ namespace rectpack2D {
 			std::copy(orders.begin(), orders.begin() + count_subjects, it);
 		}
 
+		// Cut off any potentially unused pointers at the end.
+		orders.resize(count_orders * count_subjects);
+
 		std::size_t f = 0;
 		auto& orders_ref = orders;
 
@@ -114,9 +118,9 @@ namespace rectpack2D {
 		(make_order(comparators), ...);
 
 
-		return find_best_packing_impl<empty_spaces_type, decltype(std::begin(orders))>(
+		return find_best_packing_impl<empty_spaces_type, rect_type*>(
 			[count_subjects, &orders_ref](auto callback) {
-				for (auto it = orders_ref.begin(); it != orders_ref.end(); it += count_subjects) {
+				for (auto it = orders_ref.data(); it != orders_ref.data() + orders_ref.size(); it += count_subjects) {
 					callback(it, it + count_subjects);
 				}
 			},

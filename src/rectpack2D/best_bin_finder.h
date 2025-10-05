@@ -44,11 +44,11 @@ namespace rectpack2D {
 		HEIGHT
 	};
 
-	template <class empty_spaces_type, class OrderingIterator>
+	template <class empty_spaces_type, class element_type>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		empty_spaces_type& root,
-		OrderingIterator ordering_begin,
-		OrderingIterator ordering_end,
+		element_type* ordering_begin,
+		element_type* ordering_end,
 		const rect_wh starting_bin,
 		int discard_step,
 		const bin_dimension tried_dimension
@@ -89,7 +89,7 @@ namespace rectpack2D {
 			int total_inserted_area = 0;
 
 			const bool all_inserted = [&]() {
-				for (OrderingIterator it = ordering_begin; it != ordering_end; ++it) {
+				for (const element_type* it = ordering_begin; it != ordering_end; ++it) {
 					const auto& rect = dereference(*it).get_rect();
 
 					if (root.insert(rect.get_wh())) {
@@ -159,11 +159,11 @@ namespace rectpack2D {
 		}
 	}
 
-	template <class empty_spaces_type, class OrderingIterator>
+	template <class empty_spaces_type, class element_type>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
 		empty_spaces_type& root,
-		OrderingIterator ordering_begin,
-		OrderingIterator ordering_end,
+		element_type* ordering_begin,
+		element_type* ordering_end,
 		const rect_wh starting_bin,
 		const int discard_step
 	) {
@@ -212,14 +212,15 @@ namespace rectpack2D {
 
 	template <
 		class empty_spaces_type, 
-		class OrderingIterator,
+		class element_type,
 		class F,
 		class I
 	>
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		OrderingIterator best_order_begin = OrderingIterator{}, best_order_end;
+		element_type* best_order_begin = nullptr;
+		element_type* best_order_end;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
@@ -232,7 +233,7 @@ namespace rectpack2D {
 		thread_local empty_spaces_type root = rect_wh();
 		root.flipping_mode = input.flipping_mode;
 
-		for_each_order ([&](OrderingIterator ordering_begin, OrderingIterator ordering_end) {
+		for_each_order ([&](element_type* ordering_begin, element_type* ordering_end) {
 			const auto packing = best_packing_for_ordering(
 				root,
 				ordering_begin,
@@ -246,7 +247,7 @@ namespace rectpack2D {
 					Track which function inserts the most area in total,
 					just in case that all orders will fail to fit into the largest allowed bin.
 				*/
-				if (best_order_begin == OrderingIterator{}) {
+				if (best_order_begin == nullptr) {
 					if (*total_inserted > best_total_inserted) {
 						best_order_begin = ordering_begin;
 						best_order_end = ordering_end;
@@ -265,11 +266,11 @@ namespace rectpack2D {
 		});
 
 		{
-			assert(best_order_begin != OrderingIterator{});
+			assert(best_order_begin != nullptr);
 			
 			root.reset(best_bin);
 
-			for (OrderingIterator it = best_order_begin; it != best_order_end; ++it) {
+			for (auto it = best_order_begin; it != best_order_end; ++it) {
 				auto& rect = dereference(*it).get_rect();
 
 				if (const auto ret = root.insert(rect.get_wh())) {
