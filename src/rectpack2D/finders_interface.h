@@ -51,7 +51,12 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		using element_type = std::remove_reference_t<decltype(*std::begin(subjects))>;
+		if (std::empty(subjects) == 0) {
+			return {};
+		}
+
+		// A slightly hacky way of getting the element type of any container (including C arrays).
+		using element_type = std::remove_reference_t<decltype(*std::data(subjects))>;
 
 		return find_best_packing_impl<empty_spaces_type, element_type>(
 			[&subjects](auto callback) { callback(std::data(subjects), std::data(subjects) + std::size(subjects)); },
