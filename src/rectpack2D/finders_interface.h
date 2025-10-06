@@ -51,10 +51,6 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		if (std::empty(subjects) == 0) {
-			return {};
-		}
-
 		// A slightly hacky way of getting the element type of any container (including C arrays).
 		using element_type = std::remove_reference_t<decltype(*std::data(subjects))>;
 
@@ -97,10 +93,6 @@ namespace rectpack2D {
 			}
 
 			orders[count_subjects++] = std::addressof(r);
-		}
-
-		if (count_subjects == 0) {
-			return {};
 		}
 
 		// Cut off any potentially unused pointers at the end.

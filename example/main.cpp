@@ -125,7 +125,7 @@ int main() {
 
 		std::list<my_rect> rectangles;
 
-		1. The container needs to be usable with std::data(), std::size(), and std::empty() from the STL.
+		1. The container needs to be usable with std::data() and std::size().
 		2. The element type just needs to have get_rect() member functions defined (const and non-const).
 	*/
 

@@ -265,7 +265,10 @@ namespace rectpack2D {
 			}
 		});
 
-		assert(best_order_begin != nullptr);
+		// No best order found, probably due to an empty subject list.
+		if (best_order_begin == nullptr) {
+			return {};
+		}
 		
 		root.reset(best_bin);
 
