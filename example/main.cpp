@@ -118,12 +118,15 @@ int main() {
 	/*
 		The example will compile just fine if you use any of these instead:
 
+        my_rect rectangles[];
+
 		std::vector<rect_type> rectangles;
 		std::list<rect_type> rectangles;
 
 		std::list<my_rect> rectangles;
 
-		1. The container just needs to be forward-iterable with .begin() and .end().
+		1. The container just needs to be forward-iterable with std::begin() and std::end(),
+           and a (non-const) pointer to its elements needs to be accessible via std::data().
 		2. The element type just needs to have get_rect() member functions defined (const and non-const).
 	*/
 
