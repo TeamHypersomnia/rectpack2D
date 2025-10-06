@@ -14,7 +14,7 @@ namespace rectpack2D {
 		/* 
 			This will allow us to pass orderings that consist of pointers,
 			as well as ones that are just plain objects in a vector.
-	   */	   
+		*/
 
 		if constexpr(std::is_pointer_v<T>) {
 			return *r;
@@ -265,29 +265,27 @@ namespace rectpack2D {
 			}
 		});
 
-		{
-			assert(best_order_begin != nullptr);
-			
-			root.reset(best_bin);
+		assert(best_order_begin != nullptr);
+		
+		root.reset(best_bin);
 
-			for (auto it = best_order_begin; it != best_order_end; ++it) {
-				auto& rect = dereference(*it).get_rect();
+		for (auto it = best_order_begin; it != best_order_end; ++it) {
+			auto& rect = dereference(*it).get_rect();
 
-				if (const auto ret = root.insert(rect.get_wh())) {
-					rect = *ret;
+			if (const auto ret = root.insert(rect.get_wh())) {
+				rect = *ret;
 
-					if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
-						break;
-					}
-				}
-				else {
-					if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
-						break;
-					}
+				if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
+					break;
 				}
 			}
-
-			return root.get_rects_aabb();
+			else {
+				if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
+					break;
+				}
+			}
 		}
+
+		return root.get_rects_aabb();
 	}
 }
