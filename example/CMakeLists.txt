@@ -1,8 +1,5 @@
 add_executable(rectpack2D-example)
 
-target_compile_options(rectpack2D-example PRIVATE -fsanitize=undefined,address)
-target_link_options(rectpack2D-example PRIVATE -fsanitize=undefined,address)
-
 target_sources(
     rectpack2D-example
     PUBLIC

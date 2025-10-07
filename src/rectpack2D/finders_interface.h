@@ -51,11 +51,11 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		// A slightly hacky way of getting the element type of any container (including C arrays).
-		using element_type = std::remove_reference_t<decltype(*std::data(subjects))>;
+		// A slightly hacky way of getting the iterator type of any container (including C arrays).
+		using iterator_type = decltype(std::begin(subjects));
 
-		return find_best_packing_impl<empty_spaces_type, element_type>(
-			[&subjects](auto callback) { callback(std::data(subjects), std::data(subjects) + std::size(subjects)); },
+		return find_best_packing_impl<empty_spaces_type, iterator_type>(
+			[&subjects](auto callback) { callback(std::begin(subjects), std::end(subjects)); },
 			input
 		);
 	}
@@ -83,7 +83,8 @@ namespace rectpack2D {
 		std::size_t count_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
-		std::vector<rect_type*> orders(count_orders * std::size(subjects));
+		// The actual size is adjusted later.
+		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
 
 		for (auto& s : subjects) {
 			auto& r = s.get_rect();
@@ -95,20 +96,19 @@ namespace rectpack2D {
 			orders[count_subjects++] = std::addressof(r);
 		}
 
-		// Cut off any potentially unused pointers at the end.
-		orders.resize(count_orders * count_subjects);
+		// Cut off any potentially unused rectangle pointers at the end.
+		const auto orders_end = orders.get() + (count_orders * count_subjects);
 
-		for (auto it = orders.begin() + count_subjects; it != orders.end(); it += count_subjects) {
-			std::copy(orders.begin(), orders.begin() + count_subjects, it);
+		for (auto it = orders.get() + count_subjects; it != orders_end; it += count_subjects) {
+			std::copy(orders.get(), orders.get() + count_subjects, it);
 		}
 
 		std::size_t f = 0;
-		auto& orders_ref = orders;
 
-		auto make_order = [&f, &orders_ref, &count_subjects](auto& predicate) {
+		auto make_order = [&f, &orders, &count_subjects](auto& predicate) {
 			std::sort(
-				orders_ref.begin() + (f * count_subjects),
-				orders_ref.begin() + ((f + 1) * count_subjects),
+				orders.get() + (f * count_subjects),
+				orders.get() + ((f + 1) * count_subjects),
 				predicate
 			);
 			++f;
@@ -118,9 +118,9 @@ namespace rectpack2D {
 		(make_order(comparators), ...);
 
 
-		return find_best_packing_impl<empty_spaces_type, rect_type*>(
-			[count_subjects, &orders_ref](auto callback) {
-				for (auto it = orders_ref.data(); it != orders_ref.data() + orders_ref.size(); it += count_subjects) {
+		return find_best_packing_impl<empty_spaces_type, rect_type**>(
+			[count_subjects, &orders, orders_end](auto callback) {
+				for (auto it = orders.get(); it != orders_end; it += count_subjects) {
 					callback(it, it + count_subjects);
 				}
 			},
