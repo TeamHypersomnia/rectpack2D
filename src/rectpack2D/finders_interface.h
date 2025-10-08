@@ -56,7 +56,7 @@ namespace rectpack2D {
 		using iterator_type = decltype(std::begin(subjects));
 
 		return find_best_packing_impl<empty_spaces_type, iterator_type>(
-			[&subjects](auto callback) { callback(std::begin(subjects), std::end(subjects)); },
+			[&subjects](auto callback) { callback(std::make_pair(std::begin(subjects), std::end(subjects))); },
 			input
 		);
 	}
@@ -122,7 +122,7 @@ namespace rectpack2D {
 		return find_best_packing_impl<empty_spaces_type, rect_type**>(
 			[count_subjects, &orders, orders_end](auto callback) {
 				for (auto it = orders.get(); it != orders_end; it += count_subjects) {
-					callback(it, it + count_subjects);
+					callback(std::make_pair(it, it + count_subjects));
 				}
 			},
 			input

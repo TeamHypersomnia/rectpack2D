@@ -2,6 +2,7 @@
 #include <optional>
 #include <variant>
 #include <cassert>
+#include <algorithm>
 #include "rect_structs.h"
 
 namespace rectpack2D {
@@ -48,8 +49,7 @@ namespace rectpack2D {
 	template <class empty_spaces_type, class iterator_type>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		empty_spaces_type& root,
-		iterator_type ordering_begin,
-		iterator_type ordering_end,
+		std::pair<iterator_type, iterator_type> ordering,
 		const rect_wh starting_bin,
 		int discard_step,
 		const bin_dimension tried_dimension
@@ -90,7 +90,7 @@ namespace rectpack2D {
 			int total_inserted_area = 0;
 
 			const bool all_inserted = [&]() {
-				for (auto it = ordering_begin; it != ordering_end; ++it) {
+				for (auto it = ordering.first; it != ordering.second; ++it) {
 					const auto& rect = dereference(*it).get_rect();
 
 					if (root.insert(rect.get_wh())) {
@@ -163,8 +163,7 @@ namespace rectpack2D {
 	template <class empty_spaces_type, class iterator_type>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
 		empty_spaces_type& root,
-		iterator_type ordering_begin,
-		iterator_type ordering_end,
+		std::pair<iterator_type, iterator_type> ordering,
 		const rect_wh starting_bin,
 		const int discard_step
 	) {
@@ -174,8 +173,7 @@ namespace rectpack2D {
 		) {
 			return best_packing_for_ordering_impl(
 				root,
-				ordering_begin,
-				ordering_end,
+				ordering,
 				starting_bin,
 				discard_step,
 				tried_dimension
@@ -241,11 +239,10 @@ namespace rectpack2D {
 		thread_local empty_spaces_type root = rect_wh();
 		root.flipping_mode = input.flipping_mode;
 
-		for_each_order ([&](iterator_type ordering_begin, iterator_type ordering_end) {
+		for_each_order ([&](std::pair<iterator_type, iterator_type> ordering) {
 			const auto packing = best_packing_for_ordering(
 				root,
-				ordering_begin,
-				ordering_end,
+				ordering,
 				max_bin,
 				input.discard_step
 			);
@@ -257,8 +254,8 @@ namespace rectpack2D {
 				*/
 				if (best_order_begin == iterator_type()) {
 					if (*total_inserted > best_total_inserted) {
-						best_order_begin = ordering_begin;
-						best_order_end = ordering_end;
+						best_order_begin = ordering.first;
+						best_order_end = ordering.second;
 						best_total_inserted = *total_inserted;
 					}
 				}
@@ -266,8 +263,8 @@ namespace rectpack2D {
 			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
 				/* Save the function if it performed the best. */
 				if (result_bin->area() <= best_bin.area()) {
-					best_order_begin = ordering_begin;
-					best_order_end = ordering_end;
+					best_order_begin = ordering.first;
+					best_order_end = ordering.second;
 					best_bin = *result_bin;
 				}
 			}
