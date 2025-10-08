@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <variant>
 #include <cassert>
 #include "rect_structs.h"
@@ -219,8 +220,14 @@ namespace rectpack2D {
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		// A default-constructed iterator is used as a sentinel value.
-		iterator_type best_order_begin = iterator_type();
+		// Use std::optional in order to be able to tell whether the iterator
+		// is valid. We can't use nullptr since the function is designed for
+		// use with various iterable types (e.g. linked lists), and the
+		// standard doesn't really make any guarantees about this stuff.
+		std::optional<iterator_type> best_order_begin;
+
+		// This value will only be used once we're sure best_order_begin is valid,
+		// so it doesn't have to be wrapped in std::optional.
 		iterator_type best_order_end;
 
 		int best_total_inserted = -1;
@@ -266,11 +273,11 @@ namespace rectpack2D {
 			}
 		});
 
-		assert(best_order_begin != iterator_type());
+		assert(best_order_begin.has_value());
 		
 		root.reset(best_bin);
 
-		for (auto it = best_order_begin; it != best_order_end; ++it) {
+		for (auto it = best_order_begin.value(); it != best_order_end; ++it) {
 			auto& rect = dereference(*it).get_rect();
 
 			if (const auto ret = root.insert(rect.get_wh())) {
