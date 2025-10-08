@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <variant>
+#include <memory>
 #include <algorithm>
 
 #include "insert_and_split.h"
