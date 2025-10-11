@@ -218,10 +218,6 @@ namespace rectpack2D {
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		// Use std::optional in order to be able to tell whether the iterators
-		// are valid. We can't use nullptr since the function is designed for
-		// use with various iterable types (e.g. linked lists), and the
-		// standard doesn't really make any guarantees about this stuff.
 		std::optional<std::pair<iterator_type, iterator_type>> best_order;
 
 		int best_total_inserted = -1;
