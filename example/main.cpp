@@ -125,9 +125,9 @@ int main() {
 
 		std::list<my_rect> rectangles;
 
-		1. The container needs to be forward-iterable with std::begin() and std::end(),
-		   and have its size queryable via std::size().
-		2. The element type just needs to have get_rect() member functions defined (const and non-const).
+		1.	The container needs to be forward-iterable with std::begin() and std::end(),
+			and have its size queryable via std::size().
+		2.	The element type just needs to have get_rect() member functions defined (const and non-const).
 	*/
 
 	rectangles.emplace_back(rect_xywh(0, 0, 20, 40));
