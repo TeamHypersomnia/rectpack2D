@@ -216,9 +216,11 @@ namespace rectpack2D {
 		class I
 	>
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
+		using OrderType = std::pair<iterator_type, iterator_type>;
+
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		std::optional<std::pair<iterator_type, iterator_type>> best_order;
+		std::optional<OrderType> best_order;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
@@ -231,10 +233,10 @@ namespace rectpack2D {
 		thread_local empty_spaces_type root = rect_wh();
 		root.flipping_mode = input.flipping_mode;
 
-		for_each_order ([&](std::pair<iterator_type, iterator_type> ordering) {
+		for_each_order ([&](OrderType& current_order) {
 			const auto packing = best_packing_for_ordering(
 				root,
-				ordering,
+				current_order,
 				max_bin,
 				input.discard_step
 			);
@@ -246,7 +248,7 @@ namespace rectpack2D {
 				*/
 				if (!best_order.has_value()) {
 					if (*total_inserted > best_total_inserted) {
-						best_order = ordering;
+						best_order = current_order;
 						best_total_inserted = *total_inserted;
 					}
 				}
@@ -254,7 +256,7 @@ namespace rectpack2D {
 			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
 				/* Save the function if it performed the best. */
 				if (result_bin->area() <= best_bin.area()) {
-					best_order = ordering;
+					best_order = current_order;
 					best_bin = *result_bin;
 				}
 			}
