@@ -1,288 +1,272 @@
 #pragma once
+#include "rect_structs.h"
+#include <algorithm>
+#include <cassert>
 #include <optional>
 #include <variant>
-#include <cassert>
-#include <algorithm>
-#include "rect_structs.h"
 
 namespace rectpack2D {
-	enum class callback_result {
-		ABORT_PACKING,
-		CONTINUE_PACKING
-	};
+    enum class callback_result {
+        ABORT_PACKING,
+        CONTINUE_PACKING
+    };
 
-	template <class T>
-	auto& dereference(T& r) {
-		/* 
-			This will allow us to pass orderings that consist of pointers,
-			as well as ones that are just plain objects in a vector.
-	   */	   
+    template <class T>
+    auto& dereference(T& r) {
+        /*
+                This will allow us to pass orderings that consist of pointers,
+                as well as ones that are just plain objects in a vector.
+   */
 
-		if constexpr(std::is_pointer_v<T>) {
-			return *r;
-		}
-		else {
-			return r;
-		}
-	};
+        if constexpr (std::is_pointer_v<T>) {
+            return *r;
+        } else {
+            return r;
+        }
+    };
 
-	/*
-		This function will do a binary search on viable bin sizes,
-		starting from the biggest one: starting_bin.
+    /*
+            This function will do a binary search on viable bin sizes,
+            starting from the biggest one: starting_bin.
 
-		The search stops when the bin was successfully inserted into,
-		AND the bin size to be tried next differs in size from the last viable one by *less* then discard_step.
+            The search stops when the bin was successfully inserted into,
+            AND the bin size to be tried next differs in size from the last viable one by *less* then discard_step.
 
-		If we could not insert all input rectangles into a bin even as big as the starting_bin - the search fails.
-		In this case, we return the amount of space (total_area_type) inserted in total.
+            If we could not insert all input rectangles into a bin even as big as the starting_bin - the search fails.
+            In this case, we return the amount of space (total_area_type) inserted in total.
 
-		If we've found a viable bin that is smaller or equal to starting_bin, the search succeeds.
-		In this case, we return the viable bin (rect_wh).
-	*/
+            If we've found a viable bin that is smaller or equal to starting_bin, the search succeeds.
+            In this case, we return the viable bin (rect_wh).
+    */
 
-	enum class bin_dimension {
-		BOTH,
-		WIDTH,
-		HEIGHT
-	};
+    enum class bin_dimension {
+        BOTH,
+        WIDTH,
+        HEIGHT
+    };
 
-	template <class empty_spaces_type, class O>
-	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
-		empty_spaces_type& root,
-		O ordering,
-		const rect_wh starting_bin,
-		int discard_step,
-		const bin_dimension tried_dimension
-	) {
-		auto candidate_bin = starting_bin;
-		int tries_before_discarding = 0;
+    template <class empty_spaces_type, class O>
+    std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
+        empty_spaces_type&  root,
+        O                   ordering,
+        const rect_wh       starting_bin,
+        int                 discard_step,
+        const bin_dimension tried_dimension
+    ) {
+        auto candidate_bin           = starting_bin;
+        int  tries_before_discarding = 0;
 
-		if (discard_step <= 0)
-		{
-			tries_before_discarding = -discard_step;
-			discard_step = 1;
-		}
-		
-		//std::cout << "best_packing_for_ordering_impl dim: " << int(tried_dimension) << " w: " << starting_bin.w << " h: " << starting_bin.h << std::endl;
+        if (discard_step <= 0) {
+            tries_before_discarding = -discard_step;
+            discard_step            = 1;
+        }
 
-		int starting_step = 0;
+        // std::cout << "best_packing_for_ordering_impl dim: " << int(tried_dimension) << " w: " << starting_bin.w << " h: " << starting_bin.h << std::endl;
 
-		if (tried_dimension == bin_dimension::BOTH) {
-			candidate_bin.w /= 2;
-			candidate_bin.h /= 2;
+        int starting_step = 0;
 
-			starting_step = candidate_bin.w / 2;
-		}
-		else if (tried_dimension == bin_dimension::WIDTH) {
-			candidate_bin.w /= 2;
-			starting_step = candidate_bin.w / 2;
-		}
-		else {
-			candidate_bin.h /= 2;
-			starting_step = candidate_bin.h / 2;
-		}
+        if (tried_dimension == bin_dimension::BOTH) {
+            candidate_bin.w /= 2;
+            candidate_bin.h /= 2;
 
-		for (int step = starting_step; ; step = std::max(1, step / 2)) {
-			//std::cout << "candidate: " << candidate_bin.w << "x" << candidate_bin.h << std::endl;
+            starting_step = candidate_bin.w / 2;
+        } else if (tried_dimension == bin_dimension::WIDTH) {
+            candidate_bin.w /= 2;
+            starting_step = candidate_bin.w / 2;
+        } else {
+            candidate_bin.h /= 2;
+            starting_step = candidate_bin.h / 2;
+        }
 
-			root.reset(candidate_bin);
+        for (int step = starting_step;; step = std::max(1, step / 2)) {
+            // std::cout << "candidate: " << candidate_bin.w << "x" << candidate_bin.h << std::endl;
 
-			int total_inserted_area = 0;
+            root.reset(candidate_bin);
 
-			const bool all_inserted = [&]() {
-				for (auto it = ordering.first; it != ordering.second; ++it) {
-					const auto& rect = dereference(*it).get_rect();
+            int total_inserted_area = 0;
 
-					if (root.insert(rect.get_wh())) {
-						total_inserted_area += rect.area();
-					}
-					else {
-						return false;
-					}
-				}
+            const bool all_inserted = [&]() {
+                for (auto it = ordering.first; it != ordering.second; ++it) {
+                    const auto& rect = dereference(*it).get_rect();
 
-				return true;
-			}();
+                    if (root.insert(rect.get_wh())) {
+                        total_inserted_area += rect.area();
+                    } else {
+                        return false;
+                    }
+                }
 
-			if (all_inserted) {
-				/* Attempt was successful. Try with a smaller bin. */
+                return true;
+            }();
 
-				if (step <= discard_step) {
-					if (tries_before_discarding > 0)
-					{
-						tries_before_discarding--;
-					}
-					else
-					{
-						return candidate_bin;
-					}
-				}
+            if (all_inserted) {
+                /* Attempt was successful. Try with a smaller bin. */
 
-				if (tried_dimension == bin_dimension::BOTH) {
-					candidate_bin.w -= step;
-					candidate_bin.h -= step;
-				}
-				else if (tried_dimension == bin_dimension::WIDTH) {
-					candidate_bin.w -= step;
-				}
-				else {
-					candidate_bin.h -= step;
-				}
+                if (step <= discard_step) {
+                    if (tries_before_discarding > 0) {
+                        tries_before_discarding--;
+                    } else {
+                        return candidate_bin;
+                    }
+                }
 
-				root.reset(candidate_bin);
-			}
-			else {
-				/* Attempt ended with failure. Try with a bigger bin. */
+                if (tried_dimension == bin_dimension::BOTH) {
+                    candidate_bin.w -= step;
+                    candidate_bin.h -= step;
+                } else if (tried_dimension == bin_dimension::WIDTH) {
+                    candidate_bin.w -= step;
+                } else {
+                    candidate_bin.h -= step;
+                }
 
-				if (tried_dimension == bin_dimension::BOTH) {
-					candidate_bin.w += step;
-					candidate_bin.h += step;
+                root.reset(candidate_bin);
+            } else {
+                /* Attempt ended with failure. Try with a bigger bin. */
 
-					if (candidate_bin.area() > starting_bin.area()) {
-						return total_inserted_area;
-					}
-				}
-				else if (tried_dimension == bin_dimension::WIDTH) {
-					candidate_bin.w += step;
+                if (tried_dimension == bin_dimension::BOTH) {
+                    candidate_bin.w += step;
+                    candidate_bin.h += step;
 
-					if (candidate_bin.w > starting_bin.w) {
-						return total_inserted_area;
-					}
-				}
-				else {
-					candidate_bin.h += step;
+                    if (candidate_bin.area() > starting_bin.area()) {
+                        return total_inserted_area;
+                    }
+                } else if (tried_dimension == bin_dimension::WIDTH) {
+                    candidate_bin.w += step;
 
-					if (candidate_bin.h > starting_bin.h) {
-						return total_inserted_area;
-					}
-				}
-			}
-		}
-	}
+                    if (candidate_bin.w > starting_bin.w) {
+                        return total_inserted_area;
+                    }
+                } else {
+                    candidate_bin.h += step;
 
-	template <class empty_spaces_type, class O>
-	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
-		empty_spaces_type& root,
-		O&& ordering,
-		const rect_wh starting_bin,
-		const int discard_step
-	) {
-		const auto try_pack = [&](
-			const bin_dimension tried_dimension, 
-			const rect_wh starting_bin
-		) {
-			return best_packing_for_ordering_impl(
-				root,
-				std::forward<O>(ordering),
-				starting_bin,
-				discard_step,
-				tried_dimension
-			);
-		};
+                    if (candidate_bin.h > starting_bin.h) {
+                        return total_inserted_area;
+                    }
+                }
+            }
+        }
+    }
 
-		const auto best_result = try_pack(bin_dimension::BOTH, starting_bin);
+    template <class empty_spaces_type, class O>
+    std::variant<total_area_type, rect_wh> best_packing_for_ordering(
+        empty_spaces_type& root,
+        O&&                ordering,
+        const rect_wh      starting_bin,
+        const int          discard_step
+    ) {
+        const auto try_pack = [&](
+                                  const bin_dimension tried_dimension,
+                                  const rect_wh       starting_bin
+                              ) {
+            return best_packing_for_ordering_impl(
+                root,
+                std::forward<O>(ordering),
+                starting_bin,
+                discard_step,
+                tried_dimension
+            );
+        };
 
-		if (const auto failed = std::get_if<total_area_type>(&best_result)) {
-			return *failed;
-		}
+        const auto best_result = try_pack(bin_dimension::BOTH, starting_bin);
 
-		auto best_bin = std::get<rect_wh>(best_result);
+        if (const auto failed = std::get_if<total_area_type>(&best_result)) {
+            return *failed;
+        }
 
-		auto trial = [&](const bin_dimension tried_dimension) {
-			const auto trial = try_pack(tried_dimension, best_bin);
+        auto best_bin = std::get<rect_wh>(best_result);
 
-			if (const auto better = std::get_if<rect_wh>(&trial)) {
-				best_bin = *better;
-			}
-		};
+        auto trial = [&](const bin_dimension tried_dimension) {
+            const auto trial = try_pack(tried_dimension, best_bin);
 
-		trial(bin_dimension::WIDTH);
-		trial(bin_dimension::HEIGHT);
+            if (const auto better = std::get_if<rect_wh>(&trial)) {
+                best_bin = *better;
+            }
+        };
 
-		return best_bin;
-	}
+        trial(bin_dimension::WIDTH);
+        trial(bin_dimension::HEIGHT);
 
-	/*
-		This function will try to find the best bin size among the ones generated by all provided rectangle orders.
-		Only the best order will have results written to.
+        return best_bin;
+    }
 
-		The function reports which of the rectangles did and did not fit in the end.
-	*/
+    /*
+            This function will try to find the best bin size among the ones generated by all provided rectangle orders.
+            Only the best order will have results written to.
 
-	template <
-		class empty_spaces_type, 
-		class OrderType,
-		class F,
-		class I
-	>
-	rect_wh find_best_packing_impl(F for_each_order, const I input) {
-		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
+            The function reports which of the rectangles did and did not fit in the end.
+    */
 
-		std::optional<OrderType> best_order;
+    template <
+        class empty_spaces_type,
+        class OrderType,
+        class F,
+        class I>
+    rect_wh find_best_packing_impl(F for_each_order, const I input) {
+        const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		int best_total_inserted = -1;
-		auto best_bin = max_bin;
+        std::optional<OrderType> best_order;
 
-		/* 
-			The root node is re-used on the TLS. 
-			It is always reset before any packing attempt.
-		*/
+        int  best_total_inserted = -1;
+        auto best_bin            = max_bin;
 
-		thread_local empty_spaces_type root = rect_wh();
-		root.flipping_mode = input.flipping_mode;
+        /*
+                The root node is re-used on the TLS.
+                It is always reset before any packing attempt.
+        */
 
-		for_each_order ([&](OrderType& current_order) {
-			const auto packing = best_packing_for_ordering(
-				root,
-				current_order,
-				max_bin,
-				input.discard_step
-			);
+        thread_local empty_spaces_type root = rect_wh();
+        root.flipping_mode                  = input.flipping_mode;
 
-			if (const auto total_inserted = std::get_if<total_area_type>(&packing)) {
-				/*
-					Track which function inserts the most area in total,
-					just in case that all orders will fail to fit into the largest allowed bin.
-				*/
-				if (!best_order.has_value()) {
-					if (*total_inserted > best_total_inserted) {
-						best_order = current_order;
-						best_total_inserted = *total_inserted;
-					}
-				}
-			}
-			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
-				/* Save the function if it performed the best. */
-				if (result_bin->area() <= best_bin.area()) {
-					best_order = current_order;
-					best_bin = *result_bin;
-				}
-			}
-		});
+        for_each_order([&](const OrderType& current_order) {
+            const auto packing = best_packing_for_ordering(
+                root,
+                current_order,
+                max_bin,
+                input.discard_step
+            );
 
-		{
-			assert(best_order.has_value());
-			
-			root.reset(best_bin);
+            if (const auto total_inserted = std::get_if<total_area_type>(&packing)) {
+                /*
+                        Track which function inserts the most area in total,
+                        just in case that all orders will fail to fit into the largest allowed bin.
+                */
+                if (!best_order.has_value()) {
+                    if (*total_inserted > best_total_inserted) {
+                        best_order          = current_order;
+                        best_total_inserted = *total_inserted;
+                    }
+                }
+            } else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
+                /* Save the function if it performed the best. */
+                if (result_bin->area() <= best_bin.area()) {
+                    best_order = current_order;
+                    best_bin   = *result_bin;
+                }
+            }
+        });
 
-			for (auto it = best_order.value(); it.first != it.second; ++it.first) {
-				auto& rect = dereference(*it.first).get_rect();
+        {
+            assert(best_order.has_value());
 
-				if (const auto ret = root.insert(rect.get_wh())) {
-					rect = *ret;
+            root.reset(best_bin);
 
-					if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
-						break;
-					}
-				}
-				else {
-					if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
-						break;
-					}
-				}
-			}
+            for (auto it = best_order.value(); it.first != it.second; ++it.first) {
+                auto& rect = dereference(*it.first).get_rect();
 
-			return root.get_rects_aabb();
-		}
-	}
+                if (const auto ret = root.insert(rect.get_wh())) {
+                    rect = *ret;
+
+                    if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
+                        break;
+                    }
+                } else {
+                    if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
+                        break;
+                    }
+                }
+            }
+
+            return root.get_rects_aabb();
+        }
+    }
 }
