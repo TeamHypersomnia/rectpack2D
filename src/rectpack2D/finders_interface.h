@@ -91,8 +91,8 @@ namespace rectpack2D {
 		// The actual size is adjusted later.
 		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
 
-	    for (auto& s : subjects) {
-		    auto& r = s.get_rect();
+		for (auto& s : subjects) {
+			auto& r = s.get_rect();
 
 			if (r.area() == 0) {
 				continue;
