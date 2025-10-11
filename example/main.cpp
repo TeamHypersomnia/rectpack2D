@@ -151,7 +151,7 @@ int main() {
 
 			If you pass no comparators whatsoever, 
 			the standard collection of 6 orders:
-			by area, by perimeter, by bigger side, by width, by height and by "pathological multiplier"
+		   	by area, by perimeter, by bigger side, by width, by height and by "pathological multiplier"
 			- will be passed by default.
 		*/
 
