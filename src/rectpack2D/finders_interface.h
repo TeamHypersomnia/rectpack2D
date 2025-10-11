@@ -81,7 +81,7 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
-		std::size_t count_subjects = 0;
+		std::size_t count_valid_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
 		// The actual size is adjusted later.
@@ -94,22 +94,22 @@ namespace rectpack2D {
 				continue;
 			}
 
-			orders[count_subjects++] = std::addressof(r);
+			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
 		// Cut off any potentially unused rectangle pointers at the end.
-		const auto orders_end = orders.get() + (count_orders * count_subjects);
+		const auto orders_end = orders.get() + (count_orders * count_valid_subjects);
 
-		for (auto it = orders.get() + count_subjects; it != orders_end; it += count_subjects) {
-			std::copy(orders.get(), orders.get() + count_subjects, it);
+		for (auto it = orders.get() + count_valid_subjects; it != orders_end; it += count_valid_subjects) {
+			std::copy(orders.get(), orders.get() + count_valid_subjects, it);
 		}
 
 		std::size_t f = 0;
 
-		auto make_order = [&f, &orders, &count_subjects](auto& predicate) {
+		auto make_order = [&f, &orders, &count_valid_subjects](auto& predicate) {
 			std::sort(
-				orders.get() + (f * count_subjects),
-				orders.get() + ((f + 1) * count_subjects),
+				orders.get() + (f * count_valid_subjects),
+				orders.get() + ((f + 1) * count_valid_subjects),
 				predicate
 			);
 			++f;
@@ -120,9 +120,9 @@ namespace rectpack2D {
 
 
 		return find_best_packing_impl<empty_spaces_type, rect_type**>(
-			[count_subjects, &orders, orders_end](auto callback) {
-				for (auto it = orders.get(); it != orders_end; it += count_subjects) {
-					callback(std::make_pair(it, it + count_subjects));
+			[count_valid_subjects, &orders, orders_end](auto callback) {
+				for (auto it = orders.get(); it != orders_end; it += count_valid_subjects) {
+					callback(std::make_pair(it, it + count_valid_subjects));
 				}
 			},
 			input
