@@ -218,15 +218,11 @@ namespace rectpack2D {
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		// Use std::optional in order to be able to tell whether the iterator
-		// is valid. We can't use nullptr since the function is designed for
+		// Use std::optional in order to be able to tell whether the iterators
+		// are valid. We can't use nullptr since the function is designed for
 		// use with various iterable types (e.g. linked lists), and the
 		// standard doesn't really make any guarantees about this stuff.
-		std::optional<iterator_type> best_order_begin;
-
-		// This value will only be used once we're sure best_order_begin is valid,
-		// so it doesn't have to be wrapped in std::optional.
-		iterator_type best_order_end;
+		std::optional<std::pair<iterator_type, iterator_type>> best_order;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
@@ -252,10 +248,9 @@ namespace rectpack2D {
 					Track which function inserts the most area in total,
 					just in case that all orders will fail to fit into the largest allowed bin.
 				*/
-				if (best_order_begin == iterator_type()) {
+				if (!best_order.has_value()) {
 					if (*total_inserted > best_total_inserted) {
-						best_order_begin = ordering.first;
-						best_order_end = ordering.second;
+						best_order = ordering;
 						best_total_inserted = *total_inserted;
 					}
 				}
@@ -263,19 +258,18 @@ namespace rectpack2D {
 			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
 				/* Save the function if it performed the best. */
 				if (result_bin->area() <= best_bin.area()) {
-					best_order_begin = ordering.first;
-					best_order_end = ordering.second;
+					best_order = ordering;
 					best_bin = *result_bin;
 				}
 			}
 		});
 
-		assert(best_order_begin.has_value());
+		assert(best_order.has_value());
 		
 		root.reset(best_bin);
 
-		for (auto it = best_order_begin.value(); it != best_order_end; ++it) {
-			auto& rect = dereference(*it).get_rect();
+		for (auto it = best_order.value(); it.first != it.second; ++it.first) {
+			auto& rect = dereference(*it.first).get_rect();
 
 			if (const auto ret = root.insert(rect.get_wh())) {
 				rect = *ret;
