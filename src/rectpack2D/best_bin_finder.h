@@ -46,10 +46,10 @@ namespace rectpack2D {
 		HEIGHT
 	};
 
-	template <class empty_spaces_type, class iterator_type>
+	template <class empty_spaces_type, class O>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering_impl(
 		empty_spaces_type& root,
-		std::pair<iterator_type, iterator_type> ordering,
+		O ordering,
 		const rect_wh starting_bin,
 		int discard_step,
 		const bin_dimension tried_dimension
@@ -160,10 +160,10 @@ namespace rectpack2D {
 		}
 	}
 
-	template <class empty_spaces_type, class iterator_type>
+	template <class empty_spaces_type, class O>
 	std::variant<total_area_type, rect_wh> best_packing_for_ordering(
 		empty_spaces_type& root,
-		std::pair<iterator_type, iterator_type> ordering,
+		O&& ordering,
 		const rect_wh starting_bin,
 		const int discard_step
 	) {
@@ -173,7 +173,7 @@ namespace rectpack2D {
 		) {
 			return best_packing_for_ordering_impl(
 				root,
-				ordering,
+				std::forward<O>(ordering),
 				starting_bin,
 				discard_step,
 				tried_dimension
