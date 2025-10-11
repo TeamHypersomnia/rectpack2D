@@ -16,7 +16,7 @@ namespace rectpack2D {
 		/* 
 			This will allow us to pass orderings that consist of pointers,
 			as well as ones that are just plain objects in a vector.
-		*/
+	   */	   
 
 		if constexpr(std::is_pointer_v<T>) {
 			return *r;
