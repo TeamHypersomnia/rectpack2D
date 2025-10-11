@@ -211,13 +211,11 @@ namespace rectpack2D {
 
 	template <
 		class empty_spaces_type, 
-		class iterator_type,
+		class OrderType,
 		class F,
 		class I
 	>
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
-		using OrderType = std::pair<iterator_type, iterator_type>;
-
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
 		std::optional<OrderType> best_order;

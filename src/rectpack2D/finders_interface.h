@@ -54,9 +54,12 @@ namespace rectpack2D {
 	) {
 		// A slightly hacky way of getting the iterator type of any container (including C arrays).
 		using iterator_type = decltype(std::begin(subjects));
+		using order_type = std::pair<iterator_type, iterator_type>;
 
-		return find_best_packing_impl<empty_spaces_type, iterator_type>(
-			[&subjects](auto callback) { callback(std::make_pair(std::begin(subjects), std::end(subjects))); },
+		auto pair = std::make_pair(std::begin(subjects), std::end(subjects));
+
+		return find_best_packing_impl<empty_spaces_type, order_type>(
+			[&subjects, &pair](auto callback) { callback(pair); },
 			input
 		);
 	}
@@ -79,6 +82,7 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
+		using order_type = std::pair<rect_type**, rect_type**>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
 		std::size_t count_valid_subjects = 0;
@@ -119,10 +123,11 @@ namespace rectpack2D {
 		(make_order(comparators), ...);
 
 
-		return find_best_packing_impl<empty_spaces_type, rect_type**>(
+		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[count_valid_subjects, &orders, orders_end](auto callback) {
 				for (auto it = orders.get(); it != orders_end; it += count_valid_subjects) {
-					callback(std::make_pair(it, it + count_valid_subjects));
+					auto pair = std::make_pair(it, it + count_valid_subjects);
+					callback(pair);
 				}
 			},
 			input
