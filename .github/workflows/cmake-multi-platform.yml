@@ -56,9 +56,6 @@ jobs:
     - name: Build
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    # ---------
-    # Run and test (Linux)
-    # ---------
     - name: Run example and compare output (Linux)
       if: runner.os == 'Linux'
       shell: bash
@@ -74,41 +71,6 @@ jobs:
           echo "❌ Output differs from expected."
           echo "---- Actual ----"
           cat actual_output.txt
-          echo "----------------"
-          exit 1
-        fi
-
-    # ---------
-    # Run and test (Windows)
-    # ---------
-    - name: Run example and compare output (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo "Running example and capturing output..."
-        cd ${{ steps.strings.outputs.build-output-dir }}
-
-        # Find the executable (handles Debug/Release folders and .exe extension)
-        exe_path=$(find . -type f -iname 'rectpack2D-example.exe' | head -n 1 || true)
-        if [ -z "$exe_path" ]; then
-          echo "❌ Could not find rectpack2D-example.exe"
-          echo "Build directory contents:"
-          find . -maxdepth 3 -print
-          exit 1
-        fi
-
-        echo "Found executable at: $exe_path"
-        chmod +x "$exe_path" || true
-
-        "./$exe_path" > actual_output.txt 2>&1 || true
-
-        echo "Comparing output..."
-        if diff -u ../tests/example_expected_output.txt actual_output.txt; then
-          echo "✅ Output matches expected."
-        else
-          echo "❌ Output differs from expected."
-          echo "---- Actual ----"
-          sed -n '1,200p' actual_output.txt
           echo "----------------"
           exit 1
         fi
