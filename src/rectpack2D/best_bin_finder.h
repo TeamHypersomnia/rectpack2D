@@ -72,8 +72,7 @@ namespace rectpack2D {
 		auto candidate_bin = starting_bin;
 		int tries_before_discarding = 0;
 
-		if (discard_step <= 0)
-		{
+		if (discard_step <= 0) {
 			tries_before_discarding = -discard_step;
 			discard_step = 1;
 		}
@@ -226,14 +225,14 @@ namespace rectpack2D {
 
 	template <
 		class empty_spaces_type, 
-		class OrderType,
+		class order_type,
 		class F,
 		class I
 	>
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		std::optional<OrderType> best_order;
+		std::optional<order_type> best_order;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
@@ -246,7 +245,7 @@ namespace rectpack2D {
 		thread_local empty_spaces_type root = rect_wh();
 		root.flipping_mode = input.flipping_mode;
 
-		for_each_order ([&](const OrderType& current_order) {
+		for_each_order ([&](const order_type& current_order) {
 			const auto packing = best_packing_for_ordering(
 				root,
 				current_order,
@@ -275,29 +274,27 @@ namespace rectpack2D {
 			}
 		});
 
-		{
-			assert(best_order.has_value());
-			
-			root.reset(best_bin);
+		assert(best_order.has_value());
+		
+		root.reset(best_bin);
 
-			for (auto& rr : *best_order) {
-				auto& rect = dereference(rr).get_rect();
+		for (auto& rr : *best_order) {
+			auto& rect = dereference(rr).get_rect();
 
-				if (const auto ret = root.insert(rect.get_wh())) {
-					rect = *ret;
+			if (const auto ret = root.insert(rect.get_wh())) {
+				rect = *ret;
 
-					if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
-						break;
-					}
-				}
-				else {
-					if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
-						break;
-					}
+				if (callback_result::ABORT_PACKING == input.handle_successful_insertion(rect)) {
+					break;
 				}
 			}
-
-			return root.get_rects_aabb();
+			else {
+				if (callback_result::ABORT_PACKING == input.handle_unsuccessful_insertion(rect)) {
+					break;
+				}
+			}
 		}
+
+		return root.get_rects_aabb();
 	}
 }
