@@ -106,15 +106,17 @@ namespace rectpack2D {
 			);
 		};
 
-		for (std::size_t i = 1; i < count_orders; ++i) {
+		{
 			/* Zero-th order is already filled. */
 			const auto first_order = ith_order(0);
 
-			std::copy(
-				first_order.begin(),
-				first_order.end(),
-				ith_order(i).begin()
-			);
+			for (std::size_t i = 1; i < count_orders; ++i) {
+				std::copy(
+					first_order.begin(),
+					first_order.end(),
+					ith_order(i).begin()
+				);
+			}
 		}
 
 		{
