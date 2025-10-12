@@ -54,7 +54,7 @@ namespace rectpack2D {
 	) {
 		// Works with C arrays as well.
 		using iterator_type = decltype(std::begin(subjects));
-		using order_type = std::pair<iterator_type, iterator_type>;
+		using order_type = rectpack2D::span<iterator_type>;
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[&subjects](auto callback) { callback(order_type(std::begin(subjects), std::end(subjects))); },
@@ -80,7 +80,7 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
-		using order_type = std::pair<rect_type**, rect_type**>;
+		using order_type = rectpack2D::span<rect_type**>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
 		std::size_t count_valid_subjects = 0;

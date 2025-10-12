@@ -5,6 +5,22 @@
 #include "rect_structs.h"
 
 namespace rectpack2D {
+	template <class T>
+	class span {
+		T first;
+		T second;
+	public:
+		span(T first, T second) : first(first), second(second) {}
+
+		T begin() const {
+			return first;
+		}
+
+		T end() const {
+			return second;
+		}
+	};
+
 	enum class callback_result {
 		ABORT_PACKING,
 		CONTINUE_PACKING
@@ -89,8 +105,8 @@ namespace rectpack2D {
 			int total_inserted_area = 0;
 
 			const bool all_inserted = [&]() {
-				for (auto it = ordering.first; it != ordering.second; ++it) {
-					const auto& rect = dereference(*it).get_rect();
+				for (const auto& r : ordering) {
+					const auto& rect = dereference(r).get_rect();
 
 					if (root.insert(rect.get_wh())) {
 						total_inserted_area += rect.area();
@@ -264,8 +280,8 @@ namespace rectpack2D {
 			
 			root.reset(best_bin);
 
-			for (auto span = best_order.value(); span.first != span.second; ++span.first) {
-				auto& rect = dereference(*span.first).get_rect();
+			for (auto& rr : *best_order) {
+				auto& rect = dereference(rr).get_rect();
 
 				if (const auto ret = root.insert(rect.get_wh())) {
 					rect = *ret;
