@@ -48,8 +48,16 @@ if(MSVC)
         rectpack2D-example
         PUBLIC
             /permissive-
-            /RTC1
     )
+
+    # Add runtime checks only in Debug builds (they conflict with /O2)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "")
+        target_compile_options(
+            rectpack2D-example
+            PUBLIC
+                /RTC1
+        )
+    endif()
 else()
     # GCC or Clang setup
     target_compile_options(
