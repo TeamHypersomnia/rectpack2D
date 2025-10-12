@@ -99,26 +99,28 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
-		const auto orders_end = orders.get() + (count_orders * count_valid_subjects);
+		auto ith_order = [&orders, n = count_valid_subjects](const std::size_t i) {
+			return order_type(
+				orders.get() + i       * n,
+				orders.get() + (i + 1) * n
+			);
+		};
 
+		/* Zero-th order is already filled. */
 		for (std::size_t i = 1; i < count_orders; ++i) {
 			std::copy(
 				orders.get(),
 				orders.get() + count_valid_subjects,
-				orders.get() + i * count_valid_subjects
+				ith_order(i).begin()
 			);
 		}
 
 		{
 			std::size_t i = 0;
 
-			auto make_order = [&i, &orders, &count_valid_subjects](auto& predicate) {
-				std::sort(
-					orders.get() + (i       * count_valid_subjects),
-					orders.get() + ((i + 1) * count_valid_subjects),
-					predicate
-				);
-				++i;
+			auto make_order = [&i, ith_order](auto& predicate) {
+				auto o = ith_order(i++);
+				std::sort(o.begin(), o.end(), predicate);
 			};
 
 			make_order(comparator);
@@ -126,9 +128,9 @@ namespace rectpack2D {
 		}
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[count_valid_subjects, &orders, orders_end](auto callback) {
-				for (auto it = orders.get(); it != orders_end; it += count_valid_subjects) {
-					callback(order_type(it, it + count_valid_subjects));
+			[ith_order](auto callback) {
+				for (std::size_t i = 0; i < count_orders; ++i) {
+					callback(ith_order(i));
 				}
 			},
 			input
