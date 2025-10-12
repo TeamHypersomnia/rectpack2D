@@ -86,7 +86,7 @@ namespace rectpack2D {
 		std::size_t count_valid_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
-		// The actual size is adjusted later.
+		// We fill orders with valid rectangles only.
 		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
 
 		for (auto& s : subjects) {
@@ -99,7 +99,6 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
-		// Cut off any potentially unused rectangle pointers at the end.
 		const auto orders_end = orders.get() + (count_orders * count_valid_subjects);
 
 		for (auto it = orders.get() + count_valid_subjects; it != orders_end; it += count_valid_subjects) {
@@ -119,7 +118,6 @@ namespace rectpack2D {
 
 		make_order(comparator);
 		(make_order(comparators), ...);
-
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[count_valid_subjects, &orders, orders_end](auto callback) {

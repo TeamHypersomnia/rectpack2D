@@ -118,7 +118,7 @@ int main() {
 	/*
 		The example will compile just fine if you use any of these instead:
 
-		my_rect rectangles[];
+		my_rect rectangles[] = { ... };
 
 		std::vector<rect_type> rectangles;
 		std::list<rect_type> rectangles;
