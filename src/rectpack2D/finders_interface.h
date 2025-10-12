@@ -107,7 +107,10 @@ namespace rectpack2D {
 		};
 
 		{
-			/* Zero-th order is already filled. */
+			/*
+				Zero-th order is already filled.
+				We duplicate it to all other orders.
+			*/
 			const auto first_order = ith_order(0);
 
 			for (std::size_t i = 1; i < count_orders; ++i) {
@@ -123,7 +126,7 @@ namespace rectpack2D {
 			std::size_t i = 0;
 
 			auto make_order = [&i, ith_order](auto& predicate) {
-				auto o = ith_order(i++);
+				const auto o = ith_order(i++);
 				std::sort(o.begin(), o.end(), predicate);
 			};
 
