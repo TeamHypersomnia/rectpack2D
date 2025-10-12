@@ -52,7 +52,7 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		// A slightly hacky way of getting the iterator type of any container (including C arrays).
+		// Works with C arrays as well.
 		using iterator_type = decltype(std::begin(subjects));
 		using order_type = std::pair<iterator_type, iterator_type>;
 
