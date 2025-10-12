@@ -101,8 +101,12 @@ namespace rectpack2D {
 
 		const auto orders_end = orders.get() + (count_orders * count_valid_subjects);
 
-		for (auto it = orders.get() + count_valid_subjects; it != orders_end; it += count_valid_subjects) {
-			std::copy(orders.get(), orders.get() + count_valid_subjects, it);
+		for (std::size_t i = 1; i < count_orders; ++i) {
+			std::copy(
+				orders.get(),
+				orders.get() + count_valid_subjects,
+				orders.get() + i * count_valid_subjects
+			);
 		}
 
 		{
