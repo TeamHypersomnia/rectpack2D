@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <variant>
+#include <memory>
 #include <algorithm>
 
 #include "insert_and_split.h"
@@ -51,10 +52,12 @@ namespace rectpack2D {
 		Subjects& subjects,
 		const finder_input<F, G>& input
 	) {
-		using order_type = std::remove_reference_t<decltype(subjects)>;
+		// Works with C arrays as well.
+		using iterator_type = decltype(std::begin(subjects));
+		using order_type = rectpack2D::span<iterator_type>;
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&subjects](auto callback) { callback(subjects); },
+			[&subjects](auto callback) { callback(order_type(std::begin(subjects), std::end(subjects))); },
 			input
 		);
 	}
@@ -77,43 +80,66 @@ namespace rectpack2D {
 		Comparators... comparators
 	) {
 		using rect_type = output_rect_t<empty_spaces_type>;
-		using order_type = std::vector<rect_type*>;
+		using order_type = rectpack2D::span<rect_type**>;
 
 		constexpr auto count_orders = 1 + sizeof...(Comparators);
-		thread_local std::array<order_type, count_orders> orders;
+		std::size_t count_valid_subjects = 0;
 
-		{
-			/* order[0] will always exist since this overload requires at least one comparator */
-			auto& initial_pointers = orders[0];
-			initial_pointers.clear();
+		// Allocate space assuming no rectangle has an area of zero.
+		// We fill orders with valid rectangles only.
+		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
 
-			for (auto& s : subjects) {
-				auto& r = s.get_rect();
+		for (auto& s : subjects) {
+			auto& r = s.get_rect();
 
-				if (r.area() > 0) {
-					initial_pointers.emplace_back(std::addressof(r));
-				}
+			if (r.area() == 0) {
+				continue;
 			}
 
+			orders[count_valid_subjects++] = std::addressof(r);
+		}
+
+		auto ith_order = [&orders, n = count_valid_subjects](const std::size_t i) {
+			return order_type(
+				orders.get() + i       * n,
+				orders.get() + (i + 1) * n
+			);
+		};
+
+		{
+			/*
+				Zero-th order is already filled.
+				We duplicate it to all other orders.
+			*/
+			const auto first_order = ith_order(0);
+
 			for (std::size_t i = 1; i < count_orders; ++i) {
-				orders[i] = initial_pointers;
+				std::copy(
+					first_order.begin(),
+					first_order.end(),
+					ith_order(i).begin()
+				);
 			}
 		}
 
-		std::size_t f = 0;
+		{
+			std::size_t i = 0;
 
-		auto& orders_ref = orders;
+			auto make_order = [&i, ith_order](auto& predicate) {
+				const auto o = ith_order(i++);
+				std::sort(o.begin(), o.end(), predicate);
+			};
 
-		auto make_order = [&f, &orders_ref](auto& predicate) {
-			std::sort(orders_ref[f].begin(), orders_ref[f].end(), predicate);
-			++f;
-		};
-
-		make_order(comparator);
-		(make_order(comparators), ...);
+			make_order(comparator);
+			(make_order(comparators), ...);
+		}
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&orders_ref](auto callback){ for (auto& o : orders_ref) { callback(o); } },
+			[ith_order](auto callback) {
+				for (std::size_t i = 0; i < count_orders; ++i) {
+					callback(ith_order(i));
+				}
+			},
 			input
 		);
 	}

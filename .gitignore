@@ -1,6 +1,7 @@
 /cmake-build-debug/
 .DS_Store
 .idea
+.cache/
 *.iml
 example/clang_commands.sh
 example/main

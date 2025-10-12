@@ -1,9 +1,26 @@
 #pragma once
 #include <variant>
 #include <cassert>
+#include <algorithm>
 #include "rect_structs.h"
 
 namespace rectpack2D {
+	template <class T>
+	class span {
+		T first;
+		T second;
+	public:
+		span(T first, T second) : first(first), second(second) {}
+
+		T begin() const {
+			return first;
+		}
+
+		T end() const {
+			return second;
+		}
+	};
+
 	enum class callback_result {
 		ABORT_PACKING,
 		CONTINUE_PACKING
@@ -216,7 +233,7 @@ namespace rectpack2D {
 	rect_wh find_best_packing_impl(F for_each_order, const I input) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
 
-		OrderType* best_order = nullptr;
+		std::optional<OrderType> best_order;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
@@ -229,7 +246,7 @@ namespace rectpack2D {
 		thread_local empty_spaces_type root = rect_wh();
 		root.flipping_mode = input.flipping_mode;
 
-		for_each_order ([&](OrderType& current_order) {
+		for_each_order ([&](const OrderType& current_order) {
 			const auto packing = best_packing_for_ordering(
 				root,
 				current_order,
@@ -242,9 +259,9 @@ namespace rectpack2D {
 					Track which function inserts the most area in total,
 					just in case that all orders will fail to fit into the largest allowed bin.
 				*/
-				if (best_order == nullptr) {
+				if (!best_order.has_value()) {
 					if (*total_inserted > best_total_inserted) {
-						best_order = std::addressof(current_order);
+						best_order = current_order;
 						best_total_inserted = *total_inserted;
 					}
 				}
@@ -252,14 +269,14 @@ namespace rectpack2D {
 			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
 				/* Save the function if it performed the best. */
 				if (result_bin->area() <= best_bin.area()) {
-					best_order = std::addressof(current_order);
+					best_order = current_order;
 					best_bin = *result_bin;
 				}
 			}
 		});
 
 		{
-			assert(best_order != nullptr);
+			assert(best_order.has_value());
 			
 			root.reset(best_bin);
 
