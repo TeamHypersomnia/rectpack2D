@@ -124,7 +124,7 @@ namespace rectpack2D {
 		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[count_valid_subjects, &orders, orders_end](auto callback) {
 				for (auto it = orders.get(); it != orders_end; it += count_valid_subjects) {
-					callback(std::make_pair(it, it + count_valid_subjects));
+					callback(order_type(it, it + count_valid_subjects));
 				}
 			},
 			input
