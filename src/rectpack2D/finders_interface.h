@@ -105,19 +105,21 @@ namespace rectpack2D {
 			std::copy(orders.get(), orders.get() + count_valid_subjects, it);
 		}
 
-		std::size_t f = 0;
+		{
+			std::size_t i = 0;
 
-		auto make_order = [&f, &orders, &count_valid_subjects](auto& predicate) {
-			std::sort(
-				orders.get() + (f * count_valid_subjects),
-				orders.get() + ((f + 1) * count_valid_subjects),
-				predicate
-			);
-			++f;
-		};
+			auto make_order = [&i, &orders, &count_valid_subjects](auto& predicate) {
+				std::sort(
+					orders.get() + (i       * count_valid_subjects),
+					orders.get() + ((i + 1) * count_valid_subjects),
+					predicate
+				);
+				++i;
+			};
 
-		make_order(comparator);
-		(make_order(comparators), ...);
+			make_order(comparator);
+			(make_order(comparators), ...);
+		}
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
 			[count_valid_subjects, &orders, orders_end](auto callback) {
