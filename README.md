@@ -106,18 +106,17 @@ Then just build the generated ``.sln`` file using the newest Visual Studio Previ
 From the repository's folder, run:
 
 ```bash
-cmake/build_example.sh Release gcc g++
-cd build/current
-ninja run
+mkdir build
+cd build
+cmake -DRECTPACK2D_BUILD_EXAMPLE=1 ..
+make
 ````
 
-Or, if you want to use clang, run:
+Then run:
 
 ```bash
-cmake/build_example.sh Release clang clang++
-cd build/current
-ninja run
-````
+make run
+```
 
 ## Algorithm
 
