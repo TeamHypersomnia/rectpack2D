@@ -62,10 +62,7 @@ jobs:
         echo "Running example and capturing output..."
         cd ${{ steps.strings.outputs.build-output-dir }}
         # Run and capture output (make run includes build info + actual program output)
-        make run > actual_output.txt
-
-        # Append expected [100%] Built target run line
-        echo "[100%] Built target run" >> ../tests/example_expected_output.txt
+        ./example/rectpack2D-example > actual_output.txt
 
         echo "Comparing output..."
         if diff -u ../tests/example_expected_output.txt actual_output.txt; then
