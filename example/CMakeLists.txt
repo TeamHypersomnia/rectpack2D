@@ -14,13 +14,6 @@ target_link_libraries(
         rectpack2D::rectpack2D
 )
 
-# Set C++ standard to 17
-set_property(
-    TARGET rectpack2D-example
-    PROPERTY
-    CXX_STANDARD 17
-)
-
 set(RESULT_EXE_WORKING_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Enable LTO (only in release, not debug with sanitizers)
