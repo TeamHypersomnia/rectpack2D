@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
 #include <vector>
-
 #include "rect_structs.h"
 
 namespace rectpack2D {
