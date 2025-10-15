@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
 #include <vector>
-#include <type_traits>
 
 #include "rect_structs.h"
 
