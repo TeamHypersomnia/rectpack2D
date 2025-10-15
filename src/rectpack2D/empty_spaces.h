@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "insert_and_split.h"
 
 namespace rectpack2D {

@@ -1,16 +1,8 @@
 #pragma once
-#include <optional>
-#include <vector>
-#include <array>
-#include <variant>
 #include <memory>
-#include <algorithm>
-
-#include "insert_and_split.h"
 #include "empty_spaces.h"
-#include "empty_space_allocators.h"
-
 #include "best_bin_finder.h"
+#include "empty_space_allocators.h" // IWYU pragma: export
 
 namespace rectpack2D {
 	template <class empty_spaces_type>

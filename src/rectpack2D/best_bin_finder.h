@@ -1,7 +1,7 @@
 #pragma once
 #include <variant>
 #include <cassert>
-#include <algorithm>
+#include <optional>
 #include "rect_structs.h"
 
 namespace rectpack2D {
