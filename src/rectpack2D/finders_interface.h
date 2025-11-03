@@ -74,12 +74,12 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 		using order_type = rectpack2D::span<rect_type**>;
 
-		constexpr auto count_orders = 1 + sizeof...(Comparators);
+		std::size_t count_total_subjects = std::size(subjects);
 		std::size_t count_valid_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
 		// We fill orders with valid rectangles only.
-		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
+		auto orders = std::make_unique<rect_type*[]>(2 * count_total_subjects);
 
 		for (auto& s : subjects) {
 			auto& r = s.get_rect();
@@ -91,46 +91,20 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
-		auto ith_order = [&orders, n = count_valid_subjects](const std::size_t i) {
-			return order_type(
-				orders.get() + i       * n,
-				orders.get() + (i + 1) * n
-			);
-		};
-
-		{
-			/*
-				Zero-th order is already filled.
-				We duplicate it to all other orders.
-			*/
-			const auto first_order = ith_order(0);
-
-			for (std::size_t i = 1; i < count_orders; ++i) {
-				std::copy(
-					first_order.begin(),
-					first_order.end(),
-					ith_order(i).begin()
-				);
-			}
-		}
-
-		{
-			std::size_t i = 0;
-
-			auto make_order = [&i, ith_order](auto& predicate) {
-				const auto o = ith_order(i++);
-				std::sort(o.begin(), o.end(), predicate);
-			};
-
-			make_order(comparator);
-			(make_order(comparators), ...);
-		}
-
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[ith_order](auto callback) {
-				for (std::size_t i = 0; i < count_orders; ++i) {
-					callback(ith_order(i));
-				}
+			[&,
+				order_ptr = orders.get(),
+				orders_separator = orders.get() + count_total_subjects,
+				orders_end = orders.get() + 2 * count_total_subjects
+			](auto callback) {
+				auto make_order = [&, callback](auto& predicate) {
+					std::copy(order_ptr, orders_separator, orders_separator);
+					std::sort(orders_separator, orders_end, predicate);
+					callback({orders_separator, orders_end});
+				};
+
+				make_order(comparator);
+				(make_order(comparators), ...);
 			},
 			input
 		);
