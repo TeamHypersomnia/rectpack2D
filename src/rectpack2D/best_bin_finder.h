@@ -263,6 +263,7 @@ namespace rectpack2D {
 					if (*total_inserted > best_total_inserted) {
 						best_order_has_value = true;
 						best_total_inserted = *total_inserted;
+						best_callback();
 					}
 				}
 			}
