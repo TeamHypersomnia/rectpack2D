@@ -102,7 +102,7 @@ namespace rectpack2D {
 			// Predicates can be expensive-to-copy objects such as std::function,
 			// so capture them by reference just to be sure.
 			[=, &comparator, &comparators...](auto callback) {
-				auto make_order = [&, callback](auto predicate) {
+				auto make_order = [=](auto predicate) {
 					std::sort(orders_begin, orders_separator, predicate);
 					callback({orders_begin, orders_separator});
 				};
@@ -112,7 +112,7 @@ namespace rectpack2D {
 			},
 			[=]() { std::copy(orders_begin, orders_separator, orders_separator); },
 			input,
-			{orders_separator, orders_end}
+			{ orders_separator, orders_end }
 		);
 	}
 
