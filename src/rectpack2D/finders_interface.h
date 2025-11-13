@@ -99,7 +99,9 @@ namespace rectpack2D {
 		auto orders_end = orders_separator + count_valid_subjects;
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[=](auto callback) {
+			// Predicates can be expensive-to-copy objects such as std::function,
+			// so capture them by reference just to be sure.
+			[=, &comparator, &comparators...](auto callback) {
 				auto make_order = [&, callback](auto predicate) {
 					std::sort(orders_begin, orders_separator, predicate);
 					callback({orders_begin, orders_separator});
