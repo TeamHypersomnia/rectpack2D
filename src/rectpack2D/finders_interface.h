@@ -48,9 +48,13 @@ namespace rectpack2D {
 		using iterator_type = decltype(std::begin(subjects));
 		using order_type = rectpack2D::span<iterator_type>;
 
+		order_type ord(std::begin(subjects), std::end(subjects));
+
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&subjects](auto callback) { callback(order_type(std::begin(subjects), std::end(subjects))); },
-			input
+			[=](auto callback) { callback(ord); },
+			[]() {},
+			input,
+			ord
 		);
 	}
 
@@ -74,12 +78,11 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 		using order_type = rectpack2D::span<rect_type**>;
 
-		std::size_t count_total_subjects = std::size(subjects);
 		std::size_t count_valid_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
 		// We fill orders with valid rectangles only.
-		auto orders = std::make_unique<rect_type*[]>(2 * count_total_subjects);
+		auto orders = std::make_unique<rect_type*[]>(2 * std::size(subjects));
 
 		for (auto& s : subjects) {
 			auto& r = s.get_rect();
@@ -91,22 +94,23 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
+		auto orders_begin = orders.get();
+		auto orders_separator = orders_begin + count_valid_subjects;
+		auto orders_end = orders_separator + count_valid_subjects;
+
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&,
-				order_ptr = orders.get(),
-				orders_separator = orders.get() + count_total_subjects,
-				orders_end = orders.get() + 2 * count_total_subjects
-			](auto callback) {
-				auto make_order = [&, callback](auto& predicate) {
-					std::copy(order_ptr, orders_separator, orders_separator);
-					std::sort(orders_separator, orders_end, predicate);
-					callback({orders_separator, orders_end});
+			[=](auto callback) {
+				auto make_order = [&, callback](auto predicate) {
+					std::sort(orders_begin, orders_separator, predicate);
+					callback({orders_begin, orders_separator});
 				};
 
 				make_order(comparator);
 				(make_order(comparators), ...);
 			},
-			input
+			[=]() { std::copy(orders_begin, orders_separator, orders_separator); },
+			input,
+			{orders_separator, orders_end}
 		);
 	}
 
