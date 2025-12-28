@@ -10,7 +10,7 @@ namespace rectpack2D {
 		T first;
 		T second;
 	public:
-		span(T first, T second) : first(first), second(second) {}
+		span(T first_, T second_) : first(first_), second(second_) {}
 
 		T begin() const {
 			return first;
@@ -183,12 +183,12 @@ namespace rectpack2D {
 	) {
 		const auto try_pack = [&](
 			const bin_dimension tried_dimension, 
-			const rect_wh starting_bin
+			const rect_wh candidate_starting_bin
 		) {
 			return best_packing_for_ordering_impl(
 				root,
 				std::forward<O>(ordering),
-				starting_bin,
+				candidate_starting_bin,
 				discard_step,
 				tried_dimension
 			);
@@ -202,7 +202,7 @@ namespace rectpack2D {
 
 		auto best_bin = std::get<rect_wh>(best_result);
 
-		auto trial = [&](const bin_dimension tried_dimension) {
+		auto try_dimension = [&](const bin_dimension tried_dimension) {
 			const auto trial = try_pack(tried_dimension, best_bin);
 
 			if (const auto better = std::get_if<rect_wh>(&trial)) {
@@ -210,8 +210,8 @@ namespace rectpack2D {
 			}
 		};
 
-		trial(bin_dimension::WIDTH);
-		trial(bin_dimension::HEIGHT);
+		try_dimension(bin_dimension::WIDTH);
+		try_dimension(bin_dimension::HEIGHT);
 
 		return best_bin;
 	}
