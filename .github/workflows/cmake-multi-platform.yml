@@ -22,8 +22,8 @@ jobs:
             c_compiler: cl
             cpp_compiler: cl
           - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-15
+            cpp_compiler: g++-15
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
@@ -37,6 +37,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install GCC 15
+      if: matrix.c_compiler == 'gcc-15'
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        sudo apt-get install -y gcc-15 g++-15
 
     - name: Set reusable strings
       id: strings
