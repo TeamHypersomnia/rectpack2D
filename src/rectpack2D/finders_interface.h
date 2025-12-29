@@ -48,9 +48,13 @@ namespace rectpack2D {
 		using iterator_type = decltype(std::begin(subjects));
 		using order_type = rectpack2D::span<iterator_type>;
 
+		order_type ord(std::begin(subjects), std::end(subjects));
+
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[&subjects](auto callback) { callback(order_type(std::begin(subjects), std::end(subjects))); },
-			input
+			[=](auto callback) { callback(ord); },
+			[]() {},
+			input,
+			ord
 		);
 	}
 
@@ -74,12 +78,11 @@ namespace rectpack2D {
 		using rect_type = output_rect_t<empty_spaces_type>;
 		using order_type = rectpack2D::span<rect_type**>;
 
-		constexpr auto count_orders = 1 + sizeof...(Comparators);
 		std::size_t count_valid_subjects = 0;
 
 		// Allocate space assuming no rectangle has an area of zero.
 		// We fill orders with valid rectangles only.
-		auto orders = std::make_unique<rect_type*[]>(count_orders * std::size(subjects));
+		auto orders = std::make_unique<rect_type*[]>(2 * std::size(subjects));
 
 		for (auto& s : subjects) {
 			auto& r = s.get_rect();
@@ -91,48 +94,25 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
-		auto ith_order = [&orders, n = count_valid_subjects](const std::size_t i) {
-			return order_type(
-				orders.get() + i       * n,
-				orders.get() + (i + 1) * n
-			);
-		};
-
-		{
-			/*
-				Zero-th order is already filled.
-				We duplicate it to all other orders.
-			*/
-			const auto first_order = ith_order(0);
-
-			for (std::size_t i = 1; i < count_orders; ++i) {
-				std::copy(
-					first_order.begin(),
-					first_order.end(),
-					ith_order(i).begin()
-				);
-			}
-		}
-
-		{
-			std::size_t i = 0;
-
-			auto make_order = [&i, ith_order](auto& predicate) {
-				const auto o = ith_order(i++);
-				std::sort(o.begin(), o.end(), predicate);
-			};
-
-			make_order(comparator);
-			(make_order(comparators), ...);
-		}
+		auto orders_begin = orders.get();
+		auto orders_separator = orders_begin + count_valid_subjects;
+		auto orders_end = orders_separator + count_valid_subjects;
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[ith_order](auto callback) {
-				for (std::size_t i = 0; i < count_orders; ++i) {
-					callback(ith_order(i));
-				}
+			// Predicates can be expensive-to-copy objects such as std::function,
+			// so capture them by reference just to be sure.
+			[=, &comparator, &comparators...](auto callback) {
+				auto make_order = [=](auto predicate) {
+					std::sort(orders_begin, orders_separator, predicate);
+					callback({orders_begin, orders_separator});
+				};
+
+				make_order(comparator);
+				(make_order(comparators), ...);
 			},
-			input
+			[=]() { std::copy(orders_begin, orders_separator, orders_separator); },
+			input,
+			{ orders_separator, orders_end }
 		);
 	}
 
