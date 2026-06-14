@@ -88,7 +88,7 @@ int main() {
 		int some_medadata = 0;
 
 	public:
-		my_rect(const rect_type& rect) : rect(rect) { (void)some_medadata; }
+		my_rect(const rect_type& rect_) : rect(rect_) { (void)some_medadata; }
 
 		/*
 			You need to provide these two member getters.

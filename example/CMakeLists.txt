@@ -59,6 +59,7 @@ else()
             -Wall
             -Werror
             -Wextra
+            -Wshadow
             -ftemplate-backtrace-limit=0
     )
 
