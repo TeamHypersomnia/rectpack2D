@@ -127,8 +127,9 @@ namespace rectpack2D {
 		}
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
-			[ith_order, count_orders](auto callback) {
-				for (std::size_t i = 0; i < count_orders; ++i) {
+			[ith_order](auto callback) {
+				constexpr auto orders_count = 1 + sizeof...(Comparators);
+				for (std::size_t i = 0; i < orders_count; ++i) {
 					callback(ith_order(i));
 				}
 			},
