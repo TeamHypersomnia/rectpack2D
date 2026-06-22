@@ -1,7 +1,6 @@
 #pragma once
 #include <variant>
 #include <cassert>
-#include <optional>
 #include "rect_structs.h"
 
 namespace rectpack2D {
@@ -227,15 +226,17 @@ namespace rectpack2D {
 		class empty_spaces_type, 
 		class order_type,
 		class F,
+		class G,
 		class I
 	>
-	rect_wh find_best_packing_impl(F for_each_order, const I input) {
+	rect_wh find_best_packing_impl(F for_each_order, G best_callback, const I input, order_type best_order) {
 		const auto max_bin = rect_wh(input.max_bin_side, input.max_bin_side);
-
-		std::optional<order_type> best_order;
 
 		int best_total_inserted = -1;
 		auto best_bin = max_bin;
+
+		// Poor man's std::optional, since the best order storage is provided by the caller.
+		bool best_order_has_value = false;
 
 		/* 
 			The root node is re-used on the TLS. 
@@ -258,27 +259,29 @@ namespace rectpack2D {
 					Track which function inserts the most area in total,
 					just in case that all orders will fail to fit into the largest allowed bin.
 				*/
-				if (!best_order.has_value()) {
+				if (!best_order_has_value) {
 					if (*total_inserted > best_total_inserted) {
-						best_order = current_order;
+						best_order_has_value = true;
 						best_total_inserted = *total_inserted;
+						best_callback();
 					}
 				}
 			}
 			else if (const auto result_bin = std::get_if<rect_wh>(&packing)) {
 				/* Save the function if it performed the best. */
 				if (result_bin->area() <= best_bin.area()) {
-					best_order = current_order;
+					best_order_has_value = true;
 					best_bin = *result_bin;
+					best_callback();
 				}
 			}
 		});
 
-		assert(best_order.has_value());
+		assert(best_order_has_value);
 		
 		root.reset(best_bin);
 
-		for (auto& rr : *best_order) {
+		for (auto& rr : best_order) {
 			auto& rect = dereference(rr).get_rect();
 
 			if (const auto ret = root.insert(rect.get_wh())) {
