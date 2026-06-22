@@ -82,7 +82,7 @@ namespace rectpack2D {
 
 		// Allocate space assuming no rectangle has an area of zero.
 		// We fill orders with valid rectangles only.
-		auto orders = std::make_unique<rect_type*[]>(3 * std::size(subjects));
+		auto orders = std::make_unique<rect_type*[]>(2 * std::size(subjects));
 
 		for (auto& s : subjects) {
 			auto& r = s.get_rect();
@@ -94,29 +94,25 @@ namespace rectpack2D {
 			orders[count_valid_subjects++] = std::addressof(r);
 		}
 
-		auto orders_original = orders.get();
-		auto orders_begin    = orders_original + count_valid_subjects;
-		auto orders_best     = orders_begin + count_valid_subjects;
-		auto orders_end      = orders_best + count_valid_subjects;
+		auto orders_begin = orders.get();
+		auto orders_separator = orders_begin + count_valid_subjects;
+		auto orders_end = orders_separator + count_valid_subjects;
 
 		return find_best_packing_impl<empty_spaces_type, order_type>(
 			// Predicates can be expensive-to-copy objects such as std::function,
 			// so capture them by reference just to be sure.
 			[=, &comparator, &comparators...](auto callback) {
 				auto make_order = [=](auto predicate) {
-					// Restore [n, 2n) from the saved original [0, n) before sorting,
-					// so that each comparator sorts from the same initial state.
-					std::copy(orders_original, orders_begin, orders_begin);
-					std::sort(orders_begin, orders_best, predicate);
-					callback({ orders_begin, orders_best });
+					std::sort(orders_begin, orders_separator, predicate);
+					callback({orders_begin, orders_separator});
 				};
 
 				make_order(comparator);
 				(make_order(comparators), ...);
 			},
-			[=]() { std::copy(orders_begin, orders_best, orders_best); },
+			[=]() { std::copy(orders_begin, orders_separator, orders_separator); },
 			input,
-			{ orders_best, orders_end }
+			{ orders_separator, orders_end }
 		);
 	}
 
