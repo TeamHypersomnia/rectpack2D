@@ -5,6 +5,7 @@
 
 [![Linux & Windows Build](https://github.com/TeamHypersomnia/rectpack2D/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/TeamHypersomnia/rectpack2D/actions/workflows/cmake-multi-platform.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TeamHypersomnia/rectpack2D/badge)](https://scorecard.dev/viewer/?uri=github.com/TeamHypersomnia/rectpack2D)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14008/badge)](https://www.bestpractices.dev/projects/14008)
 	
 **Used in [Assassin's Creed: Valhalla](https://www.youtube.com/watch?v=2KnjDL4DnwM&t=2382s)!**
 
